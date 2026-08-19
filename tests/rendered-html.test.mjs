@@ -32,7 +32,7 @@ test("server-renders the MyOS portfolio shell", async () => {
   assert.match(html, /<title>MyOS · 你的个人作品桌面<\/title>/i);
   assert.match(html, /Liquid Glass 为灵感的个人作品网站/i);
   assert.match(html, /aria-label="MyOS 个人作品桌面"/i);
-  assert.match(html, /data-wallpaper="aurora"/i);
+  assert.match(html, /data-wallpaper="mountain"/i);
   assert.match(html, /data-liquid-target="dock"/i);
   assert.match(html, /系统菜单栏/);
   assert.match(html, /应用程序 Dock/);

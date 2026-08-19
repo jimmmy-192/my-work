@@ -21,6 +21,7 @@ import { getDockMagnification } from "./dock-magnification";
 import {
   isWallpaperPreference,
   readStoredPreference,
+  resolveInitialWallpaper,
   writeStoredPreference,
 } from "./preferences";
 import type { WallpaperPreference } from "./preferences";
@@ -64,7 +65,9 @@ interface DockRestingItem {
 const DEFAULT_WORKSPACE: Bounds = { x: 8, y: 8, width: 1180, height: 690 };
 const THEME_KEY = "myos-theme";
 const GLASS_KEY = "myos-glass";
-const WALLPAPER_KEY = "myos-wallpaper";
+const WALLPAPER_KEY = "myos-wallpaper-v2";
+const LEGACY_WALLPAPER_KEY = "myos-wallpaper";
+const MOUNTAIN_WALLPAPER_URL = "/wallpapers/snow-mountain.jpg";
 
 function formatTime(date: Date) {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -102,7 +105,8 @@ export function PortfolioOS() {
   const [clock, setClock] = useState("");
   const [theme, setTheme] = useState<ThemePreference>("system");
   const [glass, setGlass] = useState<GlassPreference>("standard");
-  const [wallpaper, setWallpaper] = useState<WallpaperPreference>("aurora");
+  const [wallpaper, setWallpaper] = useState<WallpaperPreference>("mountain");
+  const [mountainImageReady, setMountainImageReady] = useState(false);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [systemDark, setSystemDark] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -132,7 +136,8 @@ export function PortfolioOS() {
     rootRef: osShellRef,
     canvasHostRef: liquidCanvasHostRef,
     targetRef: dockLiquidTargetRef,
-    preferencesReady,
+    preferencesReady:
+      preferencesReady && (wallpaper !== "mountain" || isMobile || mountainImageReady),
     glass,
     sceneKey: `${resolvedTheme}:${glass}:${wallpaper}`,
   });
@@ -143,6 +148,43 @@ export function PortfolioOS() {
     const timer = window.setInterval(update, 30_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (wallpaper !== "mountain" || window.matchMedia("(max-width: 767px)").matches) {
+      return;
+    }
+
+    let cancelled = false;
+    let frame: number | null = null;
+    let preparing = false;
+    const image = new Image();
+    const prepareImage = () => {
+      if (preparing) return;
+      preparing = true;
+      void image
+        .decode()
+        .catch(() => undefined)
+        .then(() => {
+          if (cancelled) return;
+          frame = window.requestAnimationFrame(() => {
+            frame = window.requestAnimationFrame(() => {
+              if (!cancelled) setMountainImageReady(true);
+            });
+          });
+        });
+    };
+    image.addEventListener("load", prepareImage, { once: true });
+    image.addEventListener("error", prepareImage, { once: true });
+    image.src = MOUNTAIN_WALLPAPER_URL;
+    if (image.complete) prepareImage();
+
+    return () => {
+      cancelled = true;
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      image.removeEventListener("load", prepareImage);
+      image.removeEventListener("error", prepareImage);
+    };
+  }, [isMobile, wallpaper]);
 
   const resetDockMagnification = useCallback(() => {
     if (dockAnimationFrameRef.current !== null) {
@@ -260,14 +302,13 @@ export function PortfolioOS() {
       if (storage) {
         const savedTheme = readStoredPreference(storage, THEME_KEY, isTheme);
         const savedGlass = readStoredPreference(storage, GLASS_KEY, isGlass);
-        const savedWallpaper = readStoredPreference(
-          storage,
-          WALLPAPER_KEY,
-          isWallpaperPreference,
+        const savedWallpaper = resolveInitialWallpaper(
+          readStoredPreference(storage, WALLPAPER_KEY, isWallpaperPreference),
+          readStoredPreference(storage, LEGACY_WALLPAPER_KEY, isWallpaperPreference),
         );
         if (savedTheme) setTheme(savedTheme);
         if (savedGlass) setGlass(savedGlass);
-        if (savedWallpaper) setWallpaper(savedWallpaper);
+        setWallpaper(savedWallpaper);
       }
       setPreferencesReady(true);
     }, 0);

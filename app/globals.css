@@ -125,6 +125,23 @@ a:focus-visible,
 }
 
 /* Original CSS wallpaper presets --------------------------------------- */
+.os-shell[data-wallpaper="mountain"] {
+  --wallpaper-photo: url("/wallpapers/snow-mountain.jpg");
+  --wallpaper-background:
+    linear-gradient(180deg, rgba(247, 242, 255, 0.05), rgba(33, 72, 131, 0.08)),
+    var(--wallpaper-photo);
+  --wallpaper-streak: linear-gradient(110deg, transparent 14%, rgba(248, 236, 255, 0.16) 44%, rgba(186, 219, 255, 0.04) 72%, transparent 88%);
+  --wallpaper-ring: rgba(235, 239, 255, 0.16);
+  --wallpaper-ring-middle: rgba(230, 236, 255, 0.02);
+  --wallpaper-ring-outer: rgba(221, 232, 255, 0.012);
+  --wallpaper-aura-one: transparent;
+  --wallpaper-aura-two: transparent;
+  background-color: #8993c2;
+  background-position: center 58%;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
 .os-shell[data-wallpaper="iris"] {
   --wallpaper-background:
     radial-gradient(ellipse 70% 60% at 82% 10%, rgba(255, 232, 244, 0.96) 0%, rgba(239, 196, 226, 0.52) 28%, transparent 59%),
@@ -207,6 +224,23 @@ a:focus-visible,
   --wallpaper-ring-outer: rgba(135, 188, 226, 0.022);
   --wallpaper-aura-one: #4c8d87;
   --wallpaper-aura-two: #0d437f;
+}
+
+.os-shell[data-theme="dark"][data-wallpaper="mountain"] {
+  --wallpaper-background:
+    linear-gradient(180deg, rgba(9, 13, 32, 0.28), rgba(3, 14, 38, 0.43)),
+    var(--wallpaper-photo);
+  --wallpaper-streak: linear-gradient(110deg, transparent 14%, rgba(196, 193, 236, 0.1) 44%, rgba(119, 164, 218, 0.035) 72%, transparent 88%);
+  --wallpaper-ring: rgba(190, 203, 238, 0.11);
+  --wallpaper-ring-middle: rgba(179, 198, 235, 0.016);
+  --wallpaper-ring-outer: rgba(166, 190, 231, 0.01);
+  background-color: #111b35;
+}
+
+@media (max-width: 767px) {
+  .os-shell[data-wallpaper="mountain"] {
+    --wallpaper-photo: url("/wallpapers/snow-mountain-mobile.jpg");
+  }
 }
 
 .os-shell[data-glass="clear"] {
@@ -1603,6 +1637,12 @@ a:focus-visible,
     radial-gradient(circle at 82% 13%, rgba(250, 255, 176, 0.96), transparent 42%),
     radial-gradient(circle at 8% 96%, rgba(12, 99, 78, 0.9), transparent 58%),
     linear-gradient(145deg, #eff8c9 0%, #68ba98 52%, #14624c 100%);
+}
+
+.wallpaper-preview-mountain {
+  background:
+    linear-gradient(180deg, rgba(246, 238, 255, 0.03), rgba(23, 63, 124, 0.09)),
+    url("/wallpapers/snow-mountain-mobile.jpg") center 58% / cover no-repeat;
 }
 
 .wallpaper-preview-iris {

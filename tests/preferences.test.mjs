@@ -5,17 +5,26 @@ import {
   WALLPAPER_OPTIONS,
   isWallpaperPreference,
   readStoredPreference,
+  resolveInitialWallpaper,
   writeStoredPreference,
 } from "../app/os/preferences.ts";
 
-test("defines four unique wallpaper presets and validates their identifiers", () => {
+test("defines five unique wallpaper presets and validates their identifiers", () => {
   const values = WALLPAPER_OPTIONS.map((option) => option.value);
 
-  assert.equal(values.length, 4);
+  assert.equal(values.length, 5);
   assert.equal(new Set(values).size, values.length);
   values.forEach((value) => assert.equal(isWallpaperPreference(value), true));
   assert.equal(isWallpaperPreference("unknown"), false);
   assert.equal(isWallpaperPreference(null), false);
+});
+
+test("migrates the former default to the mountain photo without overriding choices", () => {
+  assert.equal(resolveInitialWallpaper(null, "aurora"), "mountain");
+  assert.equal(resolveInitialWallpaper(null, null), "mountain");
+  assert.equal(resolveInitialWallpaper(null, "tide"), "tide");
+  assert.equal(resolveInitialWallpaper("aurora", "tide"), "aurora");
+  assert.equal(resolveInitialWallpaper("sunset", "aurora"), "sunset");
 });
 
 test("reads only valid stored wallpaper values", () => {
