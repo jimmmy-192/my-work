@@ -18,6 +18,7 @@ import type {
 import { appDefinitions, portfolioContent } from "../../content/portfolio";
 import { AppContent } from "./apps";
 import { getDockMagnification } from "./dock-magnification";
+import { useLiquidGlass } from "./use-liquid-glass";
 import {
   MIN_HEIGHT,
   MIN_WIDTH,
@@ -86,13 +87,17 @@ export function PortfolioOS() {
   const [clock, setClock] = useState("");
   const [theme, setTheme] = useState<ThemePreference>("system");
   const [glass, setGlass] = useState<GlassPreference>("standard");
+  const [preferencesReady, setPreferencesReady] = useState(false);
   const [systemDark, setSystemDark] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileActiveApp, setMobileActiveApp] = useState<AppId | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [workspace, setWorkspace] = useState<Bounds>(DEFAULT_WORKSPACE);
+  const osShellRef = useRef<HTMLElement>(null);
   const windowLayerRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLElement>(null);
+  const liquidCanvasHostRef = useRef<HTMLDivElement>(null);
+  const dockLiquidTargetRef = useRef<HTMLSpanElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const gestureRef = useRef<PointerGesture | null>(null);
   const dockPointerXRef = useRef<number | null>(null);
@@ -106,6 +111,15 @@ export function PortfolioOS() {
   const resolvedTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
   const activeAppId = isMobile ? mobileActiveApp : state.activeWindowId;
   const activeApp = activeAppId ? definitions.get(activeAppId) : undefined;
+
+  useLiquidGlass({
+    rootRef: osShellRef,
+    canvasHostRef: liquidCanvasHostRef,
+    targetRef: dockLiquidTargetRef,
+    preferencesReady,
+    glass,
+    sceneKey: `${resolvedTheme}:${glass}`,
+  });
 
   useEffect(() => {
     const update = () => setClock(formatTime(new Date()));
@@ -230,17 +244,18 @@ export function PortfolioOS() {
       const savedGlass = window.localStorage.getItem(GLASS_KEY);
       if (isTheme(savedTheme)) setTheme(savedTheme);
       if (isGlass(savedGlass)) setGlass(savedGlass);
+      setPreferencesReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(THEME_KEY, theme);
-  }, [theme]);
+    if (preferencesReady) window.localStorage.setItem(THEME_KEY, theme);
+  }, [preferencesReady, theme]);
 
   useEffect(() => {
-    window.localStorage.setItem(GLASS_KEY, glass);
-  }, [glass]);
+    if (preferencesReady) window.localStorage.setItem(GLASS_KEY, glass);
+  }, [glass, preferencesReady]);
 
   useEffect(() => {
     const colorQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -483,6 +498,7 @@ export function PortfolioOS() {
 
   return (
     <main
+      ref={osShellRef}
       className="os-shell"
       data-theme={resolvedTheme}
       data-glass={glass}
@@ -491,8 +507,14 @@ export function PortfolioOS() {
       <div className="wallpaper-aurora wallpaper-aurora-one" aria-hidden="true" />
       <div className="wallpaper-aurora wallpaper-aurora-two" aria-hidden="true" />
       <div className="wallpaper-grain" aria-hidden="true" />
+      <div
+        ref={liquidCanvasHostRef}
+        className="liquid-canvas-host"
+        data-liquid-ignore=""
+        aria-hidden="true"
+      />
 
-      <header className="menu-bar" aria-label="系统菜单栏">
+      <header className="menu-bar" data-liquid-ignore="" aria-label="系统菜单栏">
         <div className="menu-left">
           <button
             className="monogram"
@@ -535,7 +557,7 @@ export function PortfolioOS() {
       </header>
 
       {menuItems ? (
-        <div className="menu-popover" data-menu={state.activeMenu} role="menu">
+        <div className="menu-popover" data-menu={state.activeMenu} data-liquid-ignore="" role="menu">
           {menuItems.map((item) => (
             <button
               key={item.label}
@@ -555,6 +577,7 @@ export function PortfolioOS() {
 
       <section
         className="desktop"
+        data-liquid-ignore=""
         aria-label="桌面"
         onPointerDown={() => dispatch({ type: "CLOSE_OVERLAYS" })}
       >
@@ -672,7 +695,7 @@ export function PortfolioOS() {
       </section>
 
       {state.searchOpen ? (
-        <div className="spotlight-backdrop" role="presentation" onPointerDown={() => dispatch({ type: "SET_SEARCH", open: false })}>
+        <div className="spotlight-backdrop" data-liquid-ignore="" role="presentation" onPointerDown={() => dispatch({ type: "SET_SEARCH", open: false })}>
           <section className="spotlight" role="dialog" aria-modal="true" aria-label="搜索应用" onPointerDown={(event) => event.stopPropagation()}>
             <label className="spotlight-input">
               <span aria-hidden="true">⌕</span>
@@ -702,11 +725,18 @@ export function PortfolioOS() {
       <nav
         ref={dockRef}
         className="dock"
+        data-liquid-ignore=""
         aria-label="应用程序 Dock"
         onPointerMove={handleDockPointerMove}
         onPointerLeave={resetDockMagnification}
         onPointerCancel={resetDockMagnification}
       >
+        <span
+          ref={dockLiquidTargetRef}
+          className="dock-liquid-lens"
+          data-liquid-target="dock"
+          aria-hidden="true"
+        />
         {appDefinitions.filter((app) => app.dock && app.id !== "trash").map((app) => {
           const running = Boolean(state.windows[app.id]);
           const active = activeAppId === app.id;
@@ -744,7 +774,7 @@ export function PortfolioOS() {
         </button>
       </nav>
 
-      <p className="desktop-hint">单击打开 · 拖动窗口 · ⌘K 搜索</p>
+      <p className="desktop-hint" data-liquid-ignore="">单击打开 · 拖动窗口 · ⌘K 搜索</p>
       <span className="sr-only" aria-live="polite">{activeApp ? `当前应用：${activeApp.title}` : "当前位于桌面"}</span>
     </main>
   );
