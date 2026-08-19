@@ -774,7 +774,6 @@ export function PortfolioOS() {
         </button>
       </nav>
 
-      <p className="desktop-hint" data-liquid-ignore="">单击打开 · 拖动窗口 · ⌘K 搜索</p>
       <span className="sr-only" aria-live="polite">{activeApp ? `当前应用：${activeApp.title}` : "当前位于桌面"}</span>
     </main>
   );
