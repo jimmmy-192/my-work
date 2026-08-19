@@ -1,4 +1,6 @@
 import { portfolioContent } from "../../content/portfolio";
+import { WALLPAPER_OPTIONS } from "./preferences";
+import type { WallpaperPreference } from "./preferences";
 import type { AppId } from "./window-manager";
 
 type ThemePreference = "system" | "light" | "dark";
@@ -11,6 +13,8 @@ interface AppContentProps {
   setTheme: (theme: ThemePreference) => void;
   glass: GlassPreference;
   setGlass: (glass: GlassPreference) => void;
+  wallpaper: WallpaperPreference;
+  setWallpaper: (wallpaper: WallpaperPreference) => void;
 }
 
 function AppHeader({ eyebrow, title, intro }: { eyebrow: string; title: string; intro?: string }) {
@@ -221,7 +225,49 @@ function ChoiceGroup<T extends string>({
   );
 }
 
-function SettingsApp({ theme, setTheme, glass, setGlass }: Omit<AppContentProps, "appId" | "openApp">) {
+function WallpaperGroup({
+  value,
+  onChange,
+}: {
+  value: WallpaperPreference;
+  onChange: (value: WallpaperPreference) => void;
+}) {
+  return (
+    <fieldset className="setting-group wallpaper-group">
+      <legend>桌面背景</legend>
+      <div className="wallpaper-options">
+        {WALLPAPER_OPTIONS.map((option) => (
+          <button
+            className={`setting-option wallpaper-option${value === option.value ? " is-selected" : ""}`}
+            type="button"
+            aria-pressed={value === option.value}
+            onClick={() => onChange(option.value)}
+            key={option.value}
+          >
+            <span
+              className={`wallpaper-preview wallpaper-preview-${option.value}`}
+              aria-hidden="true"
+            />
+            <span>
+              <strong>{option.label}</strong>
+              <small>{option.description}</small>
+            </span>
+            <i aria-hidden="true">{value === option.value ? "✓" : ""}</i>
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+function SettingsApp({
+  theme,
+  setTheme,
+  glass,
+  setGlass,
+  wallpaper,
+  setWallpaper,
+}: Omit<AppContentProps, "appId" | "openApp">) {
   const themeOptions = [
     { value: "system", label: "跟随系统", description: "自动匹配设备外观" },
     { value: "light", label: "浅色", description: "明亮、通透的桌面" },
@@ -235,8 +281,13 @@ function SettingsApp({ theme, setTheme, glass, setGlass }: Omit<AppContentProps,
 
   return (
     <article className="app-view settings-view">
-      <AppHeader eyebrow="PREFERENCES" title="外观设置" intro="这些偏好只会保存在当前设备，不会改变你的内容。" />
+      <AppHeader
+        eyebrow="PREFERENCES"
+        title="外观设置"
+        intro="背景选择只保存在当前浏览器，不会改变访客看到的默认背景。"
+      />
       <form className="settings-form" onSubmit={(event) => event.preventDefault()}>
+        <WallpaperGroup value={wallpaper} onChange={setWallpaper} />
         <ChoiceGroup label="主题" value={theme} options={themeOptions} onChange={setTheme} />
         <ChoiceGroup label="玻璃效果" value={glass} options={glassOptions} onChange={setGlass} />
       </form>
@@ -278,7 +329,16 @@ export function AppContent(props: AppContentProps) {
     case "contact":
       return <ContactApp />;
     case "settings":
-      return <SettingsApp theme={props.theme} setTheme={props.setTheme} glass={props.glass} setGlass={props.setGlass} />;
+      return (
+        <SettingsApp
+          theme={props.theme}
+          setTheme={props.setTheme}
+          glass={props.glass}
+          setGlass={props.setGlass}
+          wallpaper={props.wallpaper}
+          setWallpaper={props.setWallpaper}
+        />
+      );
     case "trash":
       return <TrashApp />;
   }

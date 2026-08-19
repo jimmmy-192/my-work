@@ -18,6 +18,12 @@ import type {
 import { appDefinitions, portfolioContent } from "../../content/portfolio";
 import { AppContent } from "./apps";
 import { getDockMagnification } from "./dock-magnification";
+import {
+  isWallpaperPreference,
+  readStoredPreference,
+  writeStoredPreference,
+} from "./preferences";
+import type { WallpaperPreference } from "./preferences";
 import { useLiquidGlass } from "./use-liquid-glass";
 import {
   MIN_HEIGHT,
@@ -58,6 +64,7 @@ interface DockRestingItem {
 const DEFAULT_WORKSPACE: Bounds = { x: 8, y: 8, width: 1180, height: 690 };
 const THEME_KEY = "myos-theme";
 const GLASS_KEY = "myos-glass";
+const WALLPAPER_KEY = "myos-wallpaper";
 
 function formatTime(date: Date) {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -78,6 +85,14 @@ function isGlass(value: string | null): value is GlassPreference {
   return value === "clear" || value === "standard" || value === "readable";
 }
 
+function getBrowserStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 function appStyle(accent: string): CSSProperties {
   return { "--app-accent": accent } as CSSProperties;
 }
@@ -87,6 +102,7 @@ export function PortfolioOS() {
   const [clock, setClock] = useState("");
   const [theme, setTheme] = useState<ThemePreference>("system");
   const [glass, setGlass] = useState<GlassPreference>("standard");
+  const [wallpaper, setWallpaper] = useState<WallpaperPreference>("aurora");
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [systemDark, setSystemDark] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -118,7 +134,7 @@ export function PortfolioOS() {
     targetRef: dockLiquidTargetRef,
     preferencesReady,
     glass,
-    sceneKey: `${resolvedTheme}:${glass}`,
+    sceneKey: `${resolvedTheme}:${glass}:${wallpaper}`,
   });
 
   useEffect(() => {
@@ -240,22 +256,40 @@ export function PortfolioOS() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const savedTheme = window.localStorage.getItem(THEME_KEY);
-      const savedGlass = window.localStorage.getItem(GLASS_KEY);
-      if (isTheme(savedTheme)) setTheme(savedTheme);
-      if (isGlass(savedGlass)) setGlass(savedGlass);
+      const storage = getBrowserStorage();
+      if (storage) {
+        const savedTheme = readStoredPreference(storage, THEME_KEY, isTheme);
+        const savedGlass = readStoredPreference(storage, GLASS_KEY, isGlass);
+        const savedWallpaper = readStoredPreference(
+          storage,
+          WALLPAPER_KEY,
+          isWallpaperPreference,
+        );
+        if (savedTheme) setTheme(savedTheme);
+        if (savedGlass) setGlass(savedGlass);
+        if (savedWallpaper) setWallpaper(savedWallpaper);
+      }
       setPreferencesReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (preferencesReady) window.localStorage.setItem(THEME_KEY, theme);
+    const storage = getBrowserStorage();
+    if (preferencesReady && storage) writeStoredPreference(storage, THEME_KEY, theme);
   }, [preferencesReady, theme]);
 
   useEffect(() => {
-    if (preferencesReady) window.localStorage.setItem(GLASS_KEY, glass);
+    const storage = getBrowserStorage();
+    if (preferencesReady && storage) writeStoredPreference(storage, GLASS_KEY, glass);
   }, [glass, preferencesReady]);
+
+  useEffect(() => {
+    const storage = getBrowserStorage();
+    if (preferencesReady && storage) {
+      writeStoredPreference(storage, WALLPAPER_KEY, wallpaper);
+    }
+  }, [preferencesReady, wallpaper]);
 
   useEffect(() => {
     const colorQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -462,7 +496,7 @@ export function PortfolioOS() {
   const menus: Record<string, MenuItem[]> = {
         myos: [
           { label: "关于 MyOS", action: () => openApp("about") },
-          { label: "系统设置…", action: () => openApp("settings"), shortcut: "⌘," },
+          { label: "桌面与外观设置…", action: () => openApp("settings"), shortcut: "⌘," },
         ],
         file: [
           { label: "打开作品", action: () => openApp("work"), shortcut: "↵" },
@@ -502,6 +536,7 @@ export function PortfolioOS() {
       className="os-shell"
       data-theme={resolvedTheme}
       data-glass={glass}
+      data-wallpaper={wallpaper}
       aria-label="MyOS 个人作品桌面"
     >
       <div className="wallpaper-aurora wallpaper-aurora-one" aria-hidden="true" />
@@ -638,6 +673,8 @@ export function PortfolioOS() {
                       setTheme={setTheme}
                       glass={glass}
                       setGlass={setGlass}
+                      wallpaper={wallpaper}
+                      setWallpaper={setWallpaper}
                     />
                   </div>
                   {windowState.status === "normal"
@@ -672,6 +709,8 @@ export function PortfolioOS() {
                 setTheme={setTheme}
                 glass={glass}
                 setGlass={setGlass}
+                wallpaper={wallpaper}
+                setWallpaper={setWallpaper}
               />
             </div>
           </section>

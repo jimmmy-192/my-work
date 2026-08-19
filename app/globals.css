@@ -71,6 +71,18 @@ a:focus-visible,
   --glass-filter-soft: blur(22px) saturate(145%);
   --window-shadow: 0 34px 90px rgba(3, 40, 27, 0.25), 0 5px 18px rgba(3, 40, 27, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   --floating-shadow: 0 22px 60px rgba(3, 35, 24, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+  /* Aurora is both the default and the fallback for unknown wallpaper values. */
+  --wallpaper-background:
+    radial-gradient(ellipse 70% 62% at 83% 13%, rgba(250, 255, 176, 0.9) 0%, rgba(228, 246, 166, 0.54) 24%, transparent 56%),
+    radial-gradient(ellipse 69% 72% at 10% 94%, rgba(13, 100, 79, 0.92) 0%, rgba(34, 126, 95, 0.5) 35%, transparent 69%),
+    radial-gradient(ellipse 54% 70% at 55% 50%, rgba(141, 216, 177, 0.62), transparent 76%),
+    linear-gradient(142deg, #d8efcb 0%, #8fcfb0 41%, #277b62 76%, #155444 100%);
+  --wallpaper-streak: linear-gradient(110deg, transparent 12%, rgba(255, 246, 155, 0.6) 42%, rgba(205, 255, 205, 0.16) 74%, transparent 88%);
+  --wallpaper-ring: rgba(242, 255, 210, 0.32);
+  --wallpaper-ring-middle: rgba(238, 255, 194, 0.045);
+  --wallpaper-ring-outer: rgba(231, 255, 201, 0.028);
+  --wallpaper-aura-one: #f7ff9d;
+  --wallpaper-aura-two: #006e5c;
   position: relative;
   isolation: isolate;
   width: 100vw;
@@ -79,11 +91,7 @@ a:focus-visible,
   overflow: hidden;
   color: var(--ink);
   color-scheme: light;
-  background:
-    radial-gradient(ellipse 70% 62% at 83% 13%, rgba(250, 255, 176, 0.9) 0%, rgba(228, 246, 166, 0.54) 24%, transparent 56%),
-    radial-gradient(ellipse 69% 72% at 10% 94%, rgba(13, 100, 79, 0.92) 0%, rgba(34, 126, 95, 0.5) 35%, transparent 69%),
-    radial-gradient(ellipse 54% 70% at 55% 50%, rgba(141, 216, 177, 0.62), transparent 76%),
-    linear-gradient(142deg, #d8efcb 0%, #8fcfb0 41%, #277b62 76%, #155444 100%);
+  background: var(--wallpaper-background);
 }
 
 .os-shell[data-theme="dark"] {
@@ -102,12 +110,103 @@ a:focus-visible,
   --card-hover: rgba(255, 255, 255, 0.115);
   --window-shadow: 0 38px 100px rgba(0, 8, 6, 0.5), 0 6px 22px rgba(0, 8, 6, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.13);
   --floating-shadow: 0 24px 70px rgba(0, 8, 6, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.13);
-  color-scheme: dark;
-  background:
+  --wallpaper-background:
     radial-gradient(ellipse 68% 58% at 82% 12%, rgba(164, 184, 78, 0.45) 0%, rgba(69, 110, 61, 0.26) 34%, transparent 67%),
     radial-gradient(ellipse 72% 75% at 8% 96%, rgba(0, 78, 64, 0.95) 0%, rgba(6, 65, 52, 0.56) 40%, transparent 72%),
     radial-gradient(ellipse 58% 72% at 55% 52%, rgba(39, 103, 77, 0.5), transparent 76%),
     linear-gradient(142deg, #263e2b 0%, #174738 45%, #0b392f 74%, #092820 100%);
+  --wallpaper-streak: linear-gradient(110deg, transparent 12%, rgba(211, 226, 127, 0.28) 42%, rgba(117, 194, 144, 0.1) 74%, transparent 88%);
+  --wallpaper-ring: rgba(213, 232, 168, 0.18);
+  --wallpaper-ring-middle: rgba(211, 238, 174, 0.034);
+  --wallpaper-ring-outer: rgba(200, 231, 177, 0.022);
+  --wallpaper-aura-one: #849348;
+  --wallpaper-aura-two: #004e40;
+  color-scheme: dark;
+}
+
+/* Original CSS wallpaper presets --------------------------------------- */
+.os-shell[data-wallpaper="iris"] {
+  --wallpaper-background:
+    radial-gradient(ellipse 70% 60% at 82% 10%, rgba(255, 232, 244, 0.96) 0%, rgba(239, 196, 226, 0.52) 28%, transparent 59%),
+    radial-gradient(ellipse 70% 72% at 8% 96%, rgba(71, 58, 158, 0.92) 0%, rgba(105, 82, 184, 0.52) 38%, transparent 70%),
+    radial-gradient(ellipse 56% 68% at 54% 50%, rgba(182, 158, 239, 0.62), transparent 76%),
+    linear-gradient(142deg, #f4ddea 0%, #b9a8df 42%, #5a4ba5 76%, #342970 100%);
+  --wallpaper-streak: linear-gradient(110deg, transparent 12%, rgba(255, 226, 246, 0.58) 42%, rgba(218, 205, 255, 0.16) 74%, transparent 88%);
+  --wallpaper-ring: rgba(244, 224, 255, 0.31);
+  --wallpaper-ring-middle: rgba(237, 216, 255, 0.048);
+  --wallpaper-ring-outer: rgba(225, 213, 255, 0.03);
+  --wallpaper-aura-one: #ffd0e4;
+  --wallpaper-aura-two: #5445c1;
+}
+
+.os-shell[data-wallpaper="sunset"] {
+  --wallpaper-background:
+    radial-gradient(ellipse 70% 60% at 83% 12%, rgba(255, 248, 189, 0.96) 0%, rgba(252, 218, 149, 0.5) 29%, transparent 59%),
+    radial-gradient(ellipse 72% 75% at 7% 96%, rgba(171, 56, 75, 0.92) 0%, rgba(201, 83, 82, 0.5) 40%, transparent 72%),
+    radial-gradient(ellipse 58% 70% at 55% 51%, rgba(249, 166, 108, 0.58), transparent 76%),
+    linear-gradient(142deg, #fff0c7 0%, #efaf83 42%, #bc5c62 76%, #65354e 100%);
+  --wallpaper-streak: linear-gradient(110deg, transparent 12%, rgba(255, 244, 176, 0.62) 42%, rgba(255, 203, 176, 0.17) 74%, transparent 88%);
+  --wallpaper-ring: rgba(255, 235, 185, 0.3);
+  --wallpaper-ring-middle: rgba(255, 221, 180, 0.048);
+  --wallpaper-ring-outer: rgba(255, 207, 185, 0.03);
+  --wallpaper-aura-one: #fff0a2;
+  --wallpaper-aura-two: #af3f58;
+}
+
+.os-shell[data-wallpaper="tide"] {
+  --wallpaper-background:
+    radial-gradient(ellipse 70% 60% at 83% 11%, rgba(225, 255, 247, 0.96) 0%, rgba(170, 236, 218, 0.48) 29%, transparent 59%),
+    radial-gradient(ellipse 72% 75% at 7% 96%, rgba(19, 79, 157, 0.92) 0%, rgba(30, 118, 169, 0.52) 40%, transparent 72%),
+    radial-gradient(ellipse 58% 70% at 55% 51%, rgba(85, 208, 206, 0.56), transparent 76%),
+    linear-gradient(142deg, #d6f5ed 0%, #79ccd0 42%, #2676aa 76%, #183e72 100%);
+  --wallpaper-streak: linear-gradient(110deg, transparent 12%, rgba(220, 255, 248, 0.58) 42%, rgba(173, 236, 255, 0.17) 74%, transparent 88%);
+  --wallpaper-ring: rgba(211, 255, 247, 0.31);
+  --wallpaper-ring-middle: rgba(190, 245, 255, 0.048);
+  --wallpaper-ring-outer: rgba(183, 221, 255, 0.03);
+  --wallpaper-aura-one: #d7fff4;
+  --wallpaper-aura-two: #145abb;
+}
+
+.os-shell[data-theme="dark"][data-wallpaper="iris"] {
+  --wallpaper-background:
+    radial-gradient(ellipse 68% 58% at 82% 12%, rgba(204, 112, 176, 0.33) 0%, transparent 67%),
+    radial-gradient(ellipse 72% 75% at 8% 96%, rgba(37, 29, 104, 0.95) 0%, transparent 72%),
+    radial-gradient(ellipse 58% 72% at 55% 52%, rgba(92, 63, 132, 0.48), transparent 76%),
+    linear-gradient(142deg, #321c35 0%, #251c4a 45%, #151736 74%, #0d1028 100%);
+  --wallpaper-streak: linear-gradient(110deg, transparent 12%, rgba(216, 139, 193, 0.26) 42%, rgba(153, 125, 218, 0.1) 74%, transparent 88%);
+  --wallpaper-ring: rgba(221, 184, 238, 0.17);
+  --wallpaper-ring-middle: rgba(219, 191, 248, 0.034);
+  --wallpaper-ring-outer: rgba(196, 185, 238, 0.022);
+  --wallpaper-aura-one: #a65c8d;
+  --wallpaper-aura-two: #33276f;
+}
+
+.os-shell[data-theme="dark"][data-wallpaper="sunset"] {
+  --wallpaper-background:
+    radial-gradient(ellipse 68% 58% at 82% 12%, rgba(180, 121, 55, 0.35) 0%, transparent 67%),
+    radial-gradient(ellipse 72% 75% at 8% 96%, rgba(93, 30, 58, 0.94) 0%, transparent 72%),
+    radial-gradient(ellipse 58% 72% at 55% 52%, rgba(112, 51, 51, 0.45), transparent 76%),
+    linear-gradient(142deg, #4d3323 0%, #542d32 45%, #3b1c32 74%, #211426 100%);
+  --wallpaper-streak: linear-gradient(110deg, transparent 12%, rgba(215, 160, 83, 0.27) 42%, rgba(184, 91, 104, 0.1) 74%, transparent 88%);
+  --wallpaper-ring: rgba(230, 190, 128, 0.17);
+  --wallpaper-ring-middle: rgba(235, 175, 133, 0.034);
+  --wallpaper-ring-outer: rgba(224, 145, 149, 0.022);
+  --wallpaper-aura-one: #8f6534;
+  --wallpaper-aura-two: #64223c;
+}
+
+.os-shell[data-theme="dark"][data-wallpaper="tide"] {
+  --wallpaper-background:
+    radial-gradient(ellipse 68% 58% at 82% 12%, rgba(80, 155, 142, 0.32) 0%, transparent 67%),
+    radial-gradient(ellipse 72% 75% at 8% 96%, rgba(4, 55, 112, 0.95) 0%, transparent 72%),
+    radial-gradient(ellipse 58% 72% at 55% 52%, rgba(24, 104, 119, 0.46), transparent 76%),
+    linear-gradient(142deg, #153242 0%, #0c3548 45%, #092940 74%, #071a2c 100%);
+  --wallpaper-streak: linear-gradient(110deg, transparent 12%, rgba(105, 187, 173, 0.25) 42%, rgba(85, 147, 202, 0.1) 74%, transparent 88%);
+  --wallpaper-ring: rgba(160, 220, 212, 0.17);
+  --wallpaper-ring-middle: rgba(147, 220, 225, 0.034);
+  --wallpaper-ring-outer: rgba(135, 188, 226, 0.022);
+  --wallpaper-aura-one: #4c8d87;
+  --wallpaper-aura-two: #0d437f;
 }
 
 .os-shell[data-glass="clear"] {
@@ -157,7 +256,7 @@ a:focus-visible,
   left: 24%;
   border-radius: 50%;
   opacity: 0.54;
-  background: linear-gradient(110deg, transparent 12%, rgba(255, 246, 155, 0.6) 42%, rgba(205, 255, 205, 0.16) 74%, transparent 88%);
+  background: var(--wallpaper-streak);
   filter: blur(50px);
   transform: rotate(-19deg);
 }
@@ -167,9 +266,9 @@ a:focus-visible,
   height: 52vmax;
   right: -28vmax;
   bottom: -29vmax;
-  border: 1px solid rgba(242, 255, 210, 0.32);
+  border: 1px solid var(--wallpaper-ring);
   border-radius: 42% 58% 55% 45%;
-  box-shadow: 0 0 0 9vmax rgba(238, 255, 194, 0.045), 0 0 0 18vmax rgba(231, 255, 201, 0.028);
+  box-shadow: 0 0 0 9vmax var(--wallpaper-ring-middle), 0 0 0 18vmax var(--wallpaper-ring-outer);
   transform: rotate(27deg);
 }
 
@@ -188,7 +287,7 @@ a:focus-visible,
   top: -22vw;
   right: -4vw;
   opacity: 0.7;
-  background: #f7ff9d;
+  background: var(--wallpaper-aura-one);
 }
 
 .wallpaper-aurora-two {
@@ -197,7 +296,7 @@ a:focus-visible,
   left: 7vw;
   bottom: -31vw;
   opacity: 0.64;
-  background: #006e5c;
+  background: var(--wallpaper-aura-two);
 }
 
 .wallpaper-grain {
@@ -1369,6 +1468,12 @@ a:focus-visible,
   gap: 10px;
 }
 
+.wallpaper-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .setting-option {
   min-width: 0;
   min-height: 72px;
@@ -1440,6 +1545,86 @@ a:focus-visible,
 .setting-swatch-clear { background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(67, 143, 111, 0.35)); }
 .setting-swatch-standard { background: linear-gradient(145deg, #e8f6ef, #5ca488); }
 .setting-swatch-readable { background: linear-gradient(145deg, #fff, #b8d4c8); }
+
+.wallpaper-option {
+  min-height: 132px;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  align-content: start;
+  align-items: center;
+}
+
+.wallpaper-option > .wallpaper-preview {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: clamp(62px, 8vw, 76px);
+}
+
+.wallpaper-preview {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 11px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48), 0 5px 14px rgba(10, 34, 28, 0.12);
+  isolation: isolate;
+}
+
+.wallpaper-preview::before,
+.wallpaper-preview::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.wallpaper-preview::before {
+  width: 78%;
+  height: 32%;
+  top: 18%;
+  left: 24%;
+  border-radius: 50%;
+  background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.47), transparent);
+  filter: blur(9px);
+  transform: rotate(-18deg);
+}
+
+.wallpaper-preview::after {
+  width: 44%;
+  aspect-ratio: 1;
+  right: -25%;
+  bottom: -47%;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 44% 56% 52% 48%;
+  box-shadow: 0 0 0 12px rgba(255, 255, 255, 0.04), 0 0 0 24px rgba(255, 255, 255, 0.025);
+  transform: rotate(28deg);
+}
+
+.wallpaper-preview-aurora {
+  background:
+    radial-gradient(circle at 82% 13%, rgba(250, 255, 176, 0.96), transparent 42%),
+    radial-gradient(circle at 8% 96%, rgba(12, 99, 78, 0.9), transparent 58%),
+    linear-gradient(145deg, #eff8c9 0%, #68ba98 52%, #14624c 100%);
+}
+
+.wallpaper-preview-iris {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(255, 222, 239, 0.96), transparent 43%),
+    radial-gradient(circle at 7% 96%, rgba(70, 52, 158, 0.92), transparent 58%),
+    linear-gradient(145deg, #f6dce9 0%, #9f89d3 52%, #392d79 100%);
+}
+
+.wallpaper-preview-sunset {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(255, 246, 180, 0.96), transparent 43%),
+    radial-gradient(circle at 7% 96%, rgba(166, 52, 73, 0.92), transparent 58%),
+    linear-gradient(145deg, #fff0bd 0%, #e89872 52%, #74364c 100%);
+}
+
+.wallpaper-preview-tide {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(220, 255, 247, 0.96), transparent 43%),
+    radial-gradient(circle at 7% 96%, rgba(18, 75, 155, 0.92), transparent 58%),
+    linear-gradient(145deg, #d7f6ed 0%, #66bec6 52%, #1a4c87 100%);
+}
 
 .settings-footnote,
 .trash-caption {
@@ -1521,7 +1706,8 @@ a:focus-visible,
   }
 
   .principle-grid,
-  .setting-options {
+  .setting-options,
+  .wallpaper-options {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -1979,6 +2165,15 @@ a:focus-visible,
     --menu-height: calc(40px + env(safe-area-inset-top));
   }
 
+  .wallpaper-aurora {
+    filter: blur(48px);
+    mix-blend-mode: normal;
+  }
+
+  .wallpaper-grain {
+    opacity: 0.1;
+  }
+
   .menu-bar {
     gap: 4px;
     padding-right: max(7px, env(safe-area-inset-right));
@@ -2201,8 +2396,13 @@ a:focus-visible,
   .project-grid,
   .experiment-grid,
   .principle-grid,
-  .setting-options {
+  .setting-options,
+  .wallpaper-options {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wallpaper-option > .wallpaper-preview {
+    height: 68px;
   }
 
   .stat-grid {

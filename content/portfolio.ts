@@ -199,9 +199,9 @@ export const appDefinitions: AppDefinition[] = [
     accent: "#657585",
     desktop: false,
     dock: true,
-    description: "调整主题与玻璃效果",
-    defaultBounds: { x: 430, y: 126, width: 620, height: 480 },
-    minSize: { width: 460, height: 380 },
+    description: "调整桌面背景、主题与玻璃效果",
+    defaultBounds: { x: 330, y: 84, width: 760, height: 610 },
+    minSize: { width: 560, height: 480 },
   },
   {
     id: "trash",
