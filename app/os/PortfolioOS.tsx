@@ -17,6 +17,7 @@ import type {
 } from "react";
 import { appDefinitions, portfolioContent } from "../../content/portfolio";
 import { AppContent } from "./apps";
+import { getDockMagnification } from "./dock-magnification";
 import {
   MIN_HEIGHT,
   MIN_WIDTH,
@@ -45,6 +46,12 @@ interface MenuItem {
   action: () => void | null;
   shortcut?: string;
   disabled?: boolean;
+}
+
+interface DockRestingItem {
+  element: HTMLElement;
+  center: number;
+  magnifies: boolean;
 }
 
 const DEFAULT_WORKSPACE: Bounds = { x: 8, y: 8, width: 1180, height: 690 };
@@ -85,8 +92,12 @@ export function PortfolioOS() {
   const [searchTerm, setSearchTerm] = useState("");
   const [workspace, setWorkspace] = useState<Bounds>(DEFAULT_WORKSPACE);
   const windowLayerRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const gestureRef = useRef<PointerGesture | null>(null);
+  const dockPointerXRef = useRef<number | null>(null);
+  const dockAnimationFrameRef = useRef<number | null>(null);
+  const dockRestingItemsRef = useRef<DockRestingItem[]>([]);
 
   const definitions = useMemo(
     () => new Map(appDefinitions.map((app) => [app.id, app])),
@@ -102,6 +113,116 @@ export function PortfolioOS() {
     const timer = window.setInterval(update, 30_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  const resetDockMagnification = useCallback(() => {
+    if (dockAnimationFrameRef.current !== null) {
+      window.cancelAnimationFrame(dockAnimationFrameRef.current);
+      dockAnimationFrameRef.current = null;
+    }
+    dockPointerXRef.current = null;
+    dockRestingItemsRef.current = [];
+
+    const dock = dockRef.current;
+    if (!dock) return;
+    dock.classList.remove("is-magnifying");
+    dock.style.removeProperty("--dock-shell-expand");
+    dock.querySelectorAll<HTMLElement>(".dock-magnify-item, .dock-divider").forEach((item) => {
+      item.style.removeProperty("--dock-scale");
+      item.style.removeProperty("--dock-shift");
+      item.style.removeProperty("--dock-label-scale");
+      item.style.removeProperty("--dock-label-bottom");
+      item.style.removeProperty("--dock-layer");
+    });
+  }, []);
+
+  const updateDockMagnification = useCallback(() => {
+    dockAnimationFrameRef.current = null;
+    const dock = dockRef.current;
+    const pointerX = dockPointerXRef.current;
+    if (!dock || pointerX === null) return;
+
+    const measurements = dockRestingItemsRef.current.map((restingItem) => ({
+      ...restingItem,
+      magnification: restingItem.magnifies
+        ? getDockMagnification(pointerX - restingItem.center)
+        : null,
+    }));
+    const totalExpansion = measurements.reduce(
+      (total, item) => total + (item.magnification?.expansion ?? 0),
+      0,
+    );
+    let precedingExpansion = 0;
+
+    dock.style.setProperty("--dock-shell-expand", `${(totalExpansion / 2).toFixed(2)}px`);
+    measurements.forEach(({ element, magnification }) => {
+      const expansion = magnification?.expansion ?? 0;
+      const shift = -totalExpansion / 2 + precedingExpansion + expansion / 2;
+      element.style.setProperty("--dock-shift", `${shift.toFixed(2)}px`);
+
+      if (magnification) {
+        element.style.setProperty("--dock-scale", magnification.scale.toFixed(4));
+        element.style.setProperty("--dock-label-scale", magnification.labelScale.toFixed(4));
+        element.style.setProperty("--dock-label-bottom", `${magnification.labelBottom.toFixed(2)}px`);
+        element.style.setProperty("--dock-layer", `${1 + Math.round(magnification.proximity * 10)}`);
+      }
+      precedingExpansion += expansion;
+    });
+  }, []);
+
+  const handleDockPointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+      if (
+        window.matchMedia("(hover: none)").matches ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        resetDockMagnification();
+        return;
+      }
+
+      const dock = dockRef.current;
+      if (!dock) return;
+      if (!dock.classList.contains("is-magnifying")) {
+        dockRestingItemsRef.current = Array.from(
+          dock.querySelectorAll<HTMLElement>(".dock-magnify-item, .dock-divider"),
+        ).map((element) => {
+          const bounds = element.getBoundingClientRect();
+          return {
+            element,
+            center: bounds.left + bounds.width / 2,
+            magnifies: element.classList.contains("dock-magnify-item"),
+          };
+        });
+        dock.classList.add("is-magnifying");
+      }
+
+      dockPointerXRef.current = event.clientX;
+      if (dockAnimationFrameRef.current === null) {
+        dockAnimationFrameRef.current = window.requestAnimationFrame(updateDockMagnification);
+      }
+    },
+    [resetDockMagnification, updateDockMagnification],
+  );
+
+  useEffect(() => resetDockMagnification, [resetDockMagnification]);
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const noHover = window.matchMedia("(hover: none)");
+    const reset = () => resetDockMagnification();
+    window.addEventListener("resize", reset);
+    reducedMotion.addEventListener("change", reset);
+    noHover.addEventListener("change", reset);
+    return () => {
+      window.removeEventListener("resize", reset);
+      reducedMotion.removeEventListener("change", reset);
+      noHover.removeEventListener("change", reset);
+    };
+  }, [resetDockMagnification]);
+
+  useEffect(() => {
+    resetDockMagnification();
+  }, [resetDockMagnification, state.windows]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -578,13 +699,20 @@ export function PortfolioOS() {
         </div>
       ) : null}
 
-      <nav className="dock" aria-label="应用程序 Dock">
+      <nav
+        ref={dockRef}
+        className="dock"
+        aria-label="应用程序 Dock"
+        onPointerMove={handleDockPointerMove}
+        onPointerLeave={resetDockMagnification}
+        onPointerCancel={resetDockMagnification}
+      >
         {appDefinitions.filter((app) => app.dock && app.id !== "trash").map((app) => {
           const running = Boolean(state.windows[app.id]);
           const active = activeAppId === app.id;
           return (
             <button
-              className={`dock-app${active ? " is-active" : ""}`}
+              className={`dock-app dock-magnify-item${active ? " is-active" : ""}`}
               style={appStyle(app.accent)}
               aria-label={`${app.title}${running ? "，正在运行" : ""}`}
               key={app.id}
@@ -602,14 +730,14 @@ export function PortfolioOS() {
           const app = definitions.get(windowState.appId);
           if (!app) return null;
           return (
-            <button className="minimized-window" key={`min-${app.id}`} aria-label={`恢复${app.title}窗口`} onClick={() => openApp(app.id)}>
+            <button className="minimized-window dock-magnify-item" key={`min-${app.id}`} aria-label={`恢复${app.title}窗口`} onClick={() => openApp(app.id)}>
               <span style={appStyle(app.accent)}>{app.icon}</span>
               <small>{app.title}</small>
             </button>
           );
         })}
         <span className="dock-divider" />
-        <button className="dock-app dock-trash" style={appStyle(definitions.get("trash")?.accent ?? "#789b91")} aria-label="废纸篓" onClick={() => openApp("trash")}>
+        <button className="dock-app dock-trash dock-magnify-item" style={appStyle(definitions.get("trash")?.accent ?? "#789b91")} aria-label="废纸篓" onClick={() => openApp("trash")}>
           <span aria-hidden="true">⌫</span>
           <small>废纸篓</small>
           {state.windows.trash ? <i className="running-dot" /> : null}
