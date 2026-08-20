@@ -2322,14 +2322,8 @@ a:focus-visible,
   border-radius: 50%;
   background: var(--ink);
   box-shadow: 0 1px 3px rgba(0, 31, 20, 0.2);
-  opacity: 0.72;
-  transform: translateX(-50%);
-}
-
-.dock-app.is-active .running-dot {
-  width: 5px;
-  height: 5px;
   opacity: 1;
+  transform: translateX(-50%);
 }
 
 .dock-divider {
