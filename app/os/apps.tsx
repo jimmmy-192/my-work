@@ -178,7 +178,7 @@ function ContactApp() {
   return (
     <article className="app-view contact-view">
       <div className="contact-orb" aria-hidden="true">
-        <span><AppIcon appId="contact" size={46} strokeWidth={1.75} /></span>
+        <span><AppIcon appId="contact" size={46} /></span>
       </div>
       <AppHeader eyebrow="CONTACT · SAY HELLO" title={contact.heading} intro={contact.intro} />
       <p className="response-note"><span aria-hidden="true" />{contact.responseTime}</p>
@@ -221,7 +221,7 @@ function ChoiceGroup<T extends string>({
             <span className={`setting-swatch setting-swatch-${option.value}`} aria-hidden="true" />
             <span><strong>{option.label}</strong><small>{option.description}</small></span>
             <i aria-hidden="true">
-              {value === option.value ? <SystemIcon name="check" size={15} strokeWidth={2.2} /> : null}
+              {value === option.value ? <SystemIcon name="check" size={15} /> : null}
             </i>
           </button>
         ))}
@@ -258,7 +258,7 @@ function WallpaperGroup({
               <small>{option.description}</small>
             </span>
             <i aria-hidden="true">
-              {value === option.value ? <SystemIcon name="check" size={15} strokeWidth={2.2} /> : null}
+              {value === option.value ? <SystemIcon name="check" size={15} /> : null}
             </i>
           </button>
         ))}

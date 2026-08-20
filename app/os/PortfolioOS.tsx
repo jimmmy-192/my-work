@@ -19,6 +19,7 @@ import { appDefinitions, portfolioContent } from "../../content/portfolio";
 import { AppContent } from "./apps";
 import { getDockMagnification } from "./dock-magnification";
 import { AppIcon, SystemIcon } from "./icons";
+import type { SystemIconName } from "./icons";
 import {
   isWallpaperPreference,
   readStoredPreference,
@@ -53,6 +54,7 @@ interface PointerGesture {
 interface MenuItem {
   label: string;
   action: () => void;
+  icon: { kind: "system"; name: SystemIconName } | { kind: "app"; appId: AppId };
   shortcut?: string;
   disabled?: boolean;
   separatorBefore?: boolean;
@@ -72,6 +74,12 @@ const LEGACY_WALLPAPER_KEY = "myos-wallpaper";
 const MOUNTAIN_WALLPAPER_URL = "/wallpapers/snow-mountain.jpg";
 const MENU_ORDER = ["myos", "go", "window", "help"] as const;
 type MenuId = (typeof MENU_ORDER)[number];
+const MENU_LABELS: Record<MenuId, string> = {
+  myos: "MyOS 菜单",
+  go: "前往菜单",
+  window: "窗口菜单",
+  help: "帮助菜单",
+};
 
 function formatTime(date: Date) {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -128,11 +136,19 @@ export function PortfolioOS() {
   const menuPopoverRef = useRef<HTMLDivElement>(null);
   const menuTriggerRefs = useRef<Partial<Record<MenuId, HTMLButtonElement>>>({});
   const menuReturnFocusRef = useRef<HTMLButtonElement | null>(null);
+  const menuInitialFocusRef = useRef<"first" | "last">("first");
   const searchReturnFocusRef = useRef<HTMLElement | null>(null);
   const searchWasOpenRef = useRef(false);
   const searchShouldRestoreFocusRef = useRef(true);
   const searchResultRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const windowRefs = useRef<Partial<Record<AppId, HTMLElement>>>({});
+  const dockAppRefs = useRef<Partial<Record<AppId, HTMLButtonElement>>>({});
+  const minimizedWindowRefs = useRef<Partial<Record<AppId, HTMLButtonElement>>>({});
+  const mobileBackButtonRef = useRef<HTMLButtonElement>(null);
+  const launcherAppRefs = useRef<Partial<Record<AppId, HTMLButtonElement>>>({});
+  const mobileReturnFocusRef = useRef<HTMLElement | null>(null);
+  const mobileReturnAppIdRef = useRef<AppId | null>(null);
+  const previousMobileAppRef = useRef<AppId | null>(null);
   const gestureRef = useRef<PointerGesture | null>(null);
   const dockPointerXRef = useRef<number | null>(null);
   const dockAnimationFrameRef = useRef<number | null>(null);
@@ -423,12 +439,48 @@ export function PortfolioOS() {
   useEffect(() => {
     if (!state.activeMenu) return;
     const timer = window.setTimeout(() => {
-      menuPopoverRef.current
-        ?.querySelector<HTMLButtonElement>("button:not(:disabled)")
-        ?.focus();
+      const items = Array.from(
+        menuPopoverRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [],
+      );
+      const target = menuInitialFocusRef.current === "last" ? items.at(-1) : items[0];
+      menuInitialFocusRef.current = "first";
+      target?.focus();
     }, 0);
     return () => window.clearTimeout(timer);
   }, [state.activeMenu]);
+
+  useEffect(() => {
+    if (!state.activeMenu) return;
+    const closeFromOutside = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (menuPopoverRef.current?.contains(target)) return;
+      if (Object.values(menuTriggerRefs.current).some((trigger) => trigger?.contains(target))) return;
+      dispatch({ type: "CLOSE_OVERLAYS" });
+    };
+    document.addEventListener("pointerdown", closeFromOutside, true);
+    return () => document.removeEventListener("pointerdown", closeFromOutside, true);
+  }, [state.activeMenu]);
+
+  useEffect(() => {
+    const previousApp = previousMobileAppRef.current;
+    previousMobileAppRef.current = mobileActiveApp;
+    if (!isMobile) return;
+
+    const timer = window.setTimeout(() => {
+      if (mobileActiveApp) {
+        mobileBackButtonRef.current?.focus();
+      } else if (previousApp) {
+        const appId = mobileReturnAppIdRef.current ?? previousApp;
+        const originalTarget = mobileReturnFocusRef.current;
+        if (originalTarget?.isConnected) originalTarget.focus();
+        else if (launcherAppRefs.current[appId]) launcherAppRefs.current[appId]?.focus();
+        else if (dockAppRefs.current[appId]) dockAppRefs.current[appId]?.focus();
+        else menuTriggerRefs.current.myos?.focus();
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [isMobile, mobileActiveApp]);
 
   const openSearch = useCallback(() => {
     const activeElement = document.activeElement;
@@ -451,8 +503,13 @@ export function PortfolioOS() {
     }, 0);
   }, []);
 
-  const toggleMenu = useCallback((menu: MenuId, trigger: HTMLButtonElement) => {
+  const toggleMenu = useCallback((
+    menu: MenuId,
+    trigger: HTMLButtonElement,
+    initialFocus: "first" | "last" = "first",
+  ) => {
     menuReturnFocusRef.current = trigger;
+    menuInitialFocusRef.current = initialFocus;
     const triggerLeft = trigger.getBoundingClientRect().left;
     setMenuLeft(Math.max(8, Math.min(triggerLeft, window.innerWidth - 240)));
     dispatch({ type: "TOGGLE_MENU", menu });
@@ -473,7 +530,12 @@ export function PortfolioOS() {
         definition.minSize,
       );
       dispatch({ type: "OPEN_APP", appId, bounds: requested });
-      if (isMobile) setMobileActiveApp(appId);
+      if (isMobile) {
+        const activeElement = document.activeElement;
+        mobileReturnFocusRef.current = activeElement instanceof HTMLElement ? activeElement : null;
+        mobileReturnAppIdRef.current = appId;
+        setMobileActiveApp(appId);
+      }
       else {
         window.setTimeout(() => windowRefs.current[appId]?.focus(), 0);
       }
@@ -487,9 +549,11 @@ export function PortfolioOS() {
       if (isMobile) setMobileActiveApp(null);
       else {
         window.setTimeout(() => {
-          document
-            .querySelector<HTMLButtonElement>(".os-window.is-active .window-title-control")
-            ?.focus();
+          const nextWindow = document.querySelector<HTMLElement>(
+            ".os-window.is-active .window-title-control",
+          );
+          if (nextWindow) nextWindow.focus();
+          else minimizedWindowRefs.current[appId]?.focus();
         }, 0);
       }
     },
@@ -502,9 +566,12 @@ export function PortfolioOS() {
       if (isMobile) setMobileActiveApp(null);
       else {
         window.setTimeout(() => {
-          document
-            .querySelector<HTMLButtonElement>(".os-window.is-active .window-title-control")
-            ?.focus();
+          const nextWindow = document.querySelector<HTMLElement>(
+            ".os-window.is-active .window-title-control",
+          );
+          if (nextWindow) nextWindow.focus();
+          else if (dockAppRefs.current[appId]) dockAppRefs.current[appId]?.focus();
+          else menuTriggerRefs.current.myos?.focus();
         }, 0);
       }
     },
@@ -522,8 +589,30 @@ export function PortfolioOS() {
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      const command = event.metaKey || event.ctrlKey;
+      const macLike = /Mac|iPhone|iPad|iPod/i.test(window.navigator.platform);
+      const command = event.metaKey || (!macLike && event.ctrlKey);
       const key = event.key.toLowerCase();
+
+      if (state.searchOpen) {
+        if (event.key === "Escape" || (command && key === "w")) {
+          event.preventDefault();
+          dispatch({ type: "SET_SEARCH", open: false });
+          return;
+        }
+        if (command && key === "m") {
+          event.preventDefault();
+          return;
+        }
+        if (command && key === "k") {
+          event.preventDefault();
+          searchInputRef.current?.focus();
+          return;
+        }
+        if (command && (event.key === "?" || (event.shiftKey && event.key === "/"))) {
+          event.preventDefault();
+          return;
+        }
+      }
 
       if (command && key === "k") {
         event.preventDefault();
@@ -552,7 +641,7 @@ export function PortfolioOS() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closeApp, closeMenuAndRestoreFocus, minimizeApp, openApp, openSearch, state.activeMenu, state.activeWindowId]);
+  }, [closeApp, closeMenuAndRestoreFocus, minimizeApp, openApp, openSearch, state.activeMenu, state.activeWindowId, state.searchOpen]);
 
   const beginGesture = (
     event: ReactPointerEvent<HTMLElement>,
@@ -709,25 +798,8 @@ export function PortfolioOS() {
 
   const handleSearchDialogKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key !== "Tab") return;
-    const focusable = [
-      searchInputRef.current,
-      ...searchResultRefs.current.slice(0, searchedApps.length),
-    ].filter(
-      (item): item is HTMLInputElement | HTMLButtonElement => item !== null,
-    );
-    if (focusable.length === 0) return;
-    const currentIndex = focusable.indexOf(
-      document.activeElement as HTMLInputElement | HTMLButtonElement,
-    );
-    const nextIndex = event.shiftKey
-      ? currentIndex <= 0
-        ? focusable.length - 1
-        : currentIndex - 1
-      : currentIndex >= focusable.length - 1
-        ? 0
-        : currentIndex + 1;
     event.preventDefault();
-    focusable[nextIndex]?.focus();
+    searchInputRef.current?.focus();
   };
 
   const handleMenuTriggerKeyDown = (
@@ -738,7 +810,11 @@ export function PortfolioOS() {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       if (state.activeMenu !== menu) {
-        toggleMenu(menu, event.currentTarget);
+        toggleMenu(
+          menu,
+          event.currentTarget,
+          event.key === "ArrowUp" ? "last" : "first",
+        );
       } else {
         const items = Array.from(
           menuPopoverRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [],
@@ -759,6 +835,17 @@ export function PortfolioOS() {
   };
 
   const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Tab") {
+      event.preventDefault();
+      const currentMenuIndex = MENU_ORDER.indexOf(state.activeMenu as MenuId);
+      const direction = event.shiftKey ? -1 : 1;
+      const nextMenu = MENU_ORDER[
+        (currentMenuIndex + direction + MENU_ORDER.length) % MENU_ORDER.length
+      ];
+      dispatch({ type: "CLOSE_OVERLAYS" });
+      window.setTimeout(() => menuTriggerRefs.current[nextMenu]?.focus(), 0);
+      return;
+    }
     const items = Array.from(
       event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
     );
@@ -794,19 +881,20 @@ export function PortfolioOS() {
 
   const menus: Record<MenuId, MenuItem[]> = {
         myos: [
-          { label: "关于 MyOS", action: () => openApp("about") },
-          { label: "系统设置…", action: () => openApp("settings"), separatorBefore: true },
+          { label: "关于 MyOS", icon: { kind: "system", name: "info" }, action: () => openApp("about") },
+          { label: "系统设置…", icon: { kind: "system", name: "settings" }, action: () => openApp("settings"), separatorBefore: true },
         ],
         go: [
-          { label: "欢迎", action: () => openApp("welcome") },
-          { label: "作品", action: () => openApp("work") },
-          { label: "关于我", action: () => openApp("about") },
-          { label: "实验室", action: () => openApp("lab") },
-          { label: "联系我", action: () => openApp("contact") },
+          { label: "欢迎", icon: { kind: "app", appId: "welcome" }, action: () => openApp("welcome") },
+          { label: "作品", icon: { kind: "app", appId: "work" }, action: () => openApp("work") },
+          { label: "关于我", icon: { kind: "app", appId: "about" }, action: () => openApp("about") },
+          { label: "实验室", icon: { kind: "app", appId: "lab" }, action: () => openApp("lab") },
+          { label: "联系我", icon: { kind: "app", appId: "contact" }, action: () => openApp("contact") },
         ],
         window: [
           {
             label: "关闭当前窗口",
+            icon: { kind: "system", name: "close" },
             action: () => {
               if (state.activeWindowId) closeApp(state.activeWindowId);
             },
@@ -815,6 +903,7 @@ export function PortfolioOS() {
           },
           {
             label: "最小化",
+            icon: { kind: "system", name: "minimize" },
             action: () => {
               if (state.activeWindowId) minimizeApp(state.activeWindowId);
             },
@@ -823,6 +912,7 @@ export function PortfolioOS() {
           },
           {
             label: activeWindow?.status === "maximized" ? "还原原始大小" : "缩放窗口",
+            icon: { kind: "system", name: activeWindow?.status === "maximized" ? "restore" : "maximize" },
             action: () => {
               if (state.activeWindowId) toggleMaximize(state.activeWindowId);
             },
@@ -831,6 +921,7 @@ export function PortfolioOS() {
           },
           {
             label: "窗口居中",
+            icon: { kind: "system", name: "move" },
             action: () => {
               if (state.activeWindowId) {
                 dispatch({ type: "CENTER_WINDOW", appId: state.activeWindowId, workspace });
@@ -840,8 +931,8 @@ export function PortfolioOS() {
           },
         ],
         help: [
-          { label: "MyOS 使用说明", action: () => openApp("welcome"), shortcut: "⌘?" },
-          { label: "快速打开…", action: openSearch, shortcut: "⌘K" },
+          { label: "MyOS 使用说明", icon: { kind: "system", name: "help" }, action: () => openApp("welcome"), shortcut: "⌘?" },
+          { label: "快速打开…", icon: { kind: "system", name: "search" }, action: openSearch, shortcut: "⌘K" },
         ],
       };
   const menuItems = state.activeMenu ? menus[state.activeMenu as MenuId] : undefined;
@@ -935,7 +1026,7 @@ export function PortfolioOS() {
           role="menu"
           tabIndex={-1}
           style={{ left: menuLeft }}
-          aria-label={`${menuTriggerRefs.current[state.activeMenu as MenuId]?.textContent?.trim() || "MyOS"}菜单`}
+          aria-label={MENU_LABELS[state.activeMenu as MenuId]}
           onKeyDown={handleMenuKeyDown}
         >
           {menuItems.map((item) => (
@@ -949,7 +1040,12 @@ export function PortfolioOS() {
                   item.action();
                 }}
               >
-                <span>{item.label}</span>
+                <span className="menu-item-icon" aria-hidden="true">
+                  {item.icon.kind === "system"
+                    ? <SystemIcon name={item.icon.name} size={14} strokeWidth={1.6} />
+                    : <AppIcon appId={item.icon.appId} size={14} strokeWidth={1.6} />}
+                </span>
+                <span className="menu-item-label">{item.label}</span>
                 {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
               </button>
             </div>
@@ -1053,7 +1149,7 @@ export function PortfolioOS() {
         ) : mobileActiveApp ? (
           <section className="mobile-app-panel" aria-labelledby={`mobile-title-${mobileActiveApp}`}>
             <header className="mobile-app-titlebar">
-              <button className="mobile-back-button" aria-label="返回桌面" onClick={returnToMobileDesktop}>
+              <button ref={mobileBackButtonRef} className="mobile-back-button" aria-label="返回桌面" onClick={returnToMobileDesktop}>
                 <SystemIcon name="back" size={20} />
                 <span>桌面</span>
               </button>
@@ -1082,7 +1178,13 @@ export function PortfolioOS() {
             </div>
             <div className="launcher-grid">
               {appDefinitions.filter((app) => app.id !== "trash").map((app) => (
-                <button key={app.id} onClick={() => openApp(app.id)}>
+                <button
+                  key={app.id}
+                  ref={(element) => {
+                    if (element) launcherAppRefs.current[app.id] = element;
+                  }}
+                  onClick={() => openApp(app.id)}
+                >
                   <span className="app-tile" style={appStyle(app.accent)} aria-hidden="true">
                     <AppIcon appId={app.id} size={30} />
                   </span>
@@ -1141,6 +1243,7 @@ export function PortfolioOS() {
                   className={index === searchActiveIndex ? "is-selected" : undefined}
                   role="option"
                   aria-selected={index === searchActiveIndex}
+                  tabIndex={-1}
                   ref={(element) => {
                     searchResultRefs.current[index] = element;
                   }}
@@ -1187,6 +1290,9 @@ export function PortfolioOS() {
               style={appStyle(app.accent)}
               aria-label={`${app.title}${running ? "，正在运行" : ""}`}
               key={app.id}
+              ref={(element) => {
+                if (element) dockAppRefs.current[app.id] = element;
+              }}
               onClick={() => openApp(app.id)}
             >
               <span aria-hidden="true"><AppIcon appId={app.id} size={24} /></span>
@@ -1201,7 +1307,15 @@ export function PortfolioOS() {
           const app = definitions.get(windowState.appId);
           if (!app) return null;
           return (
-            <button className="minimized-window dock-magnify-item" key={`min-${app.id}`} aria-label={`恢复${app.title}窗口`} onClick={() => openApp(app.id)}>
+            <button
+              className="minimized-window dock-magnify-item"
+              key={`min-${app.id}`}
+              aria-label={`恢复${app.title}窗口`}
+              ref={(element) => {
+                if (element) minimizedWindowRefs.current[app.id] = element;
+              }}
+              onClick={() => openApp(app.id)}
+            >
               <span style={appStyle(app.accent)} aria-hidden="true">
                 <AppIcon appId={app.id} size={16} />
               </span>
@@ -1210,7 +1324,15 @@ export function PortfolioOS() {
           );
         })}
         <span className="dock-divider" />
-        <button className="dock-app dock-trash dock-magnify-item" style={appStyle(definitions.get("trash")?.accent ?? "#789b91")} aria-label="废纸篓" onClick={() => openApp("trash")}>
+        <button
+          className="dock-app dock-trash dock-magnify-item"
+          style={appStyle(definitions.get("trash")?.accent ?? "#789b91")}
+          aria-label="废纸篓"
+          ref={(element) => {
+            if (element) dockAppRefs.current.trash = element;
+          }}
+          onClick={() => openApp("trash")}
+        >
           <span aria-hidden="true"><AppIcon appId="trash" size={24} /></span>
           <small>废纸篓</small>
           {state.windows.trash ? <i className="running-dot" /> : null}

@@ -3,15 +3,18 @@ import {
   AtSign,
   Check,
   ChevronLeft,
+  CircleHelp,
   CornerDownLeft,
   ExternalLink,
   FileText,
   FlaskConical,
   House,
+  Info,
   LayoutGrid,
   Maximize2,
   Minus,
   Minimize2,
+  Move,
   Search,
   Settings2,
   SunMoon,
@@ -45,6 +48,10 @@ const SYSTEM_ICONS = {
   restore: Minimize2,
   close: X,
   back: ChevronLeft,
+  help: CircleHelp,
+  info: Info,
+  move: Move,
+  settings: Settings2,
 } satisfies Record<string, LucideIcon>;
 
 export type SystemIconName = keyof typeof SYSTEM_ICONS;
@@ -61,6 +68,14 @@ interface AppIconProps extends SharedIconProps {
 
 interface SystemIconProps extends SharedIconProps {
   name: SystemIconName;
+}
+
+function opticalStrokeWidth(size: number) {
+  if (size <= 14) return 1.5;
+  if (size <= 18) return 1.6;
+  if (size <= 22) return 1.75;
+  if (size <= 30) return 1.9;
+  return 2.2;
 }
 
 function IconGlyph({
@@ -84,14 +99,14 @@ function IconGlyph({
 export function AppIcon({
   appId,
   size = 28,
-  strokeWidth = 1.9,
+  strokeWidth,
   className,
 }: AppIconProps) {
   return (
     <IconGlyph
       icon={APP_ICONS[appId]}
       size={size}
-      strokeWidth={strokeWidth}
+      strokeWidth={strokeWidth ?? opticalStrokeWidth(size)}
       className={className}
     />
   );
@@ -100,14 +115,14 @@ export function AppIcon({
 export function SystemIcon({
   name,
   size = 16,
-  strokeWidth = 1.8,
+  strokeWidth,
   className,
 }: SystemIconProps) {
   return (
     <IconGlyph
       icon={SYSTEM_ICONS[name]}
       size={size}
-      strokeWidth={strokeWidth}
+      strokeWidth={strokeWidth ?? opticalStrokeWidth(size)}
       className={className}
     />
   );
