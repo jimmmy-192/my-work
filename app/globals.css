@@ -105,7 +105,7 @@ a:focus-visible,
   --dock-icon-size: 49px;
   --dock-gap: 7px;
   --dock-padding-x: 11px;
-  --dock-padding-y: 9px;
+  --dock-padding-y: 7px;
   --ink: #10271f;
   --muted: #536b62;
   --soft-ink: #72867f;
@@ -141,7 +141,7 @@ a:focus-visible,
   --glass-filter: blur(30px) saturate(155%);
   --glass-filter-soft: blur(22px) saturate(145%);
   --window-shadow: 0 34px 90px rgba(3, 40, 27, 0.25), 0 5px 18px rgba(3, 40, 27, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  --floating-shadow: 0 22px 60px rgba(3, 35, 24, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+  --floating-shadow: 0 12px 34px rgba(3, 35, 24, 0.16), 0 2px 5px rgba(3, 35, 24, 0.08), inset 0 0.5px 0 rgba(255, 255, 255, 0.26);
   /* Aurora is both the default and the fallback for unknown wallpaper values. */
   --wallpaper-background:
     radial-gradient(ellipse 70% 62% at 83% 13%, rgba(250, 255, 176, 0.9) 0%, rgba(228, 246, 166, 0.54) 24%, transparent 56%),
@@ -196,7 +196,7 @@ a:focus-visible,
   --card: rgba(255, 255, 255, 0.075);
   --card-hover: rgba(255, 255, 255, 0.115);
   --window-shadow: 0 38px 100px rgba(0, 8, 6, 0.5), 0 6px 22px rgba(0, 8, 6, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.13);
-  --floating-shadow: 0 24px 70px rgba(0, 8, 6, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.13);
+  --floating-shadow: 0 12px 36px rgba(0, 8, 6, 0.3), 0 2px 6px rgba(0, 8, 6, 0.18), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
   --wallpaper-background:
     radial-gradient(ellipse 68% 58% at 82% 12%, rgba(164, 184, 78, 0.45) 0%, rgba(69, 110, 61, 0.26) 34%, transparent 67%),
     radial-gradient(ellipse 72% 75% at 8% 96%, rgba(0, 78, 64, 0.95) 0%, rgba(6, 65, 52, 0.56) 40%, transparent 72%),
@@ -2114,7 +2114,7 @@ a:focus-visible,
   padding-block: var(--dock-padding-y);
   padding-inline: calc(var(--dock-padding-x) + var(--dock-shell-expand));
   overflow: visible;
-  border: 1px solid var(--line);
+  border: 0.5px solid var(--line);
   border-radius: 23px;
   color: var(--ink);
   background: var(--bar);
@@ -2134,27 +2134,23 @@ a:focus-visible,
 }
 
 .os-shell[data-liquid-webgl="ready"] .dock {
-  border-color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.34);
   background: rgba(255, 255, 255, 0.045);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   box-shadow:
-    0 22px 62px rgba(3, 35, 24, 0.25),
-    0 2px 6px rgba(3, 35, 24, 0.12),
-    inset 0 1px rgba(255, 255, 255, 0.44);
+    0 12px 34px rgba(3, 35, 24, 0.16),
+    0 2px 5px rgba(3, 35, 24, 0.08),
+    inset 0 0.5px rgba(255, 255, 255, 0.24);
 }
 
 .os-shell[data-theme="dark"][data-liquid-webgl="ready"] .dock {
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.2);
   background: rgba(8, 28, 22, 0.055);
 }
 
 .os-shell[data-glass="clear"][data-liquid-webgl="ready"] .dock {
   background: rgba(255, 255, 255, 0.022);
-}
-
-.dock.is-magnifying {
-  box-shadow: 0 20px 46px rgba(3, 35, 24, 0.24), inset 0 1px rgba(255, 255, 255, 0.32);
 }
 
 .dock:not(.is-magnifying) {
@@ -2164,15 +2160,10 @@ a:focus-visible,
 .dock::before {
   content: "";
   position: absolute;
-  inset: 1px;
-  border-radius: 21px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 29%),
-    linear-gradient(330deg, rgba(255, 255, 255, 0.08), transparent 33%);
-  box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.42),
-    inset 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px rgba(4, 46, 33, 0.08);
+  inset: 0.5px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 48%);
+  box-shadow: inset 0 0.5px rgba(255, 255, 255, 0.2);
   pointer-events: none;
 }
 
