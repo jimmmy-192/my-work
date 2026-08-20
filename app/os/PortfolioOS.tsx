@@ -1328,7 +1328,10 @@ export function PortfolioOS() {
           }}
           onClick={() => openApp("trash")}
         >
-          <span aria-hidden="true"><AppIcon appId="trash" size={24} /></span>
+          <span className="dock-trash-default-icon" aria-hidden="true">
+            <AppIcon appId="trash" size={24} />
+          </span>
+          <span className="dock-trash-art" aria-hidden="true" />
           <small>废纸篓</small>
           {state.windows.trash ? <i className="running-dot" /> : null}
         </button>
