@@ -2239,8 +2239,8 @@ a:focus-visible,
   .dock-works-art,
   .dock-character-art,
   .dock-contact-art {
-    width: var(--dock-art-size);
-    height: var(--dock-art-size);
+    width: 48px;
+    height: 48px;
     display: block;
     place-self: center;
     filter: drop-shadow(0 2px 2px rgba(3, 20, 14, 0.2));
@@ -2249,17 +2249,14 @@ a:focus-visible,
   }
 
   .dock-character-art {
-    --dock-art-size: 54px;
     background: url("/icons/about-character.png") center / contain no-repeat;
   }
 
   .dock-works-art {
-    --dock-art-size: 54px;
     background: url("/icons/works-folder.png") center / contain no-repeat;
   }
 
   .dock-contact-art {
-    --dock-art-size: 52px;
     background: url("/icons/contact-envelope.png") center / contain no-repeat;
   }
 }
@@ -2401,8 +2398,8 @@ a:focus-visible,
   }
 
   .dock-trash-art {
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 48px;
     display: block;
     place-self: center;
     background: url("/icons/trash-wireframes.png") center / contain no-repeat;
