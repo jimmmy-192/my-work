@@ -28,6 +28,7 @@ import {
 } from "./preferences";
 import type { WallpaperPreference } from "./preferences";
 import { useLiquidGlass } from "./use-liquid-glass";
+import { formatMenuBarTime } from "./time";
 import {
   MIN_HEIGHT,
   MIN_WIDTH,
@@ -80,17 +81,6 @@ const MENU_LABELS: Record<MenuId, string> = {
   window: "窗口菜单",
   help: "帮助菜单",
 };
-
-function formatTime(date: Date) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "numeric",
-    day: "numeric",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
-}
 
 function isTheme(value: string | null): value is ThemePreference {
   return value === "system" || value === "light" || value === "dark";
@@ -173,7 +163,7 @@ export function PortfolioOS() {
   });
 
   useEffect(() => {
-    const update = () => setClock(formatTime(new Date()));
+    const update = () => setClock(formatMenuBarTime(new Date()));
     update();
     const timer = window.setInterval(update, 30_000);
     return () => window.clearInterval(timer);
