@@ -25,9 +25,17 @@ test("uses one aligned symbol column in command menus", () => {
   assert.match(css, /grid-template-columns:\s*18px minmax\(0, 1fr\) auto/);
 });
 
+test("uses white menu-bar content and pill-shaped top-level controls", () => {
+  assert.match(css, /--menu-bar-ink:\s*#fff/);
+  assert.match(css, /--menu-bar-text-shadow:\s*none/);
+  assert.match(css, /--menu-control-hover:\s*rgba\(0, 0, 0,/);
+  assert.match(css, /--menu-control-active:\s*rgba\(0, 0, 0,/);
+  assert.match(css, /\.menu-bar button \{[\s\S]*?border-radius:\s*999px/);
+  assert.match(css, /\.menu-bar \.monogram \{[\s\S]*?border-radius:\s*999px/);
+});
+
 test("uses optical icon weights and one Dock running-state indicator", () => {
   assert.match(icons, /function opticalStrokeWidth/);
   assert.doesNotMatch(css, /\.dock-app\.is-active::after/);
   assert.match(css, /\.dock-app\.is-active \.running-dot/);
 });
-
