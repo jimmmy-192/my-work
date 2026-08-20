@@ -9,7 +9,9 @@ import {
   FlaskConical,
   House,
   LayoutGrid,
+  Maximize2,
   Minus,
+  Minimize2,
   Search,
   Settings2,
   SunMoon,
@@ -39,6 +41,8 @@ const SYSTEM_ICONS = {
   return: CornerDownLeft,
   file: FileText,
   minimize: Minus,
+  maximize: Maximize2,
+  restore: Minimize2,
   close: X,
   back: ChevronLeft,
 } satisfies Record<string, LucideIcon>;

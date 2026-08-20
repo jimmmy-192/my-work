@@ -996,9 +996,15 @@ export function PortfolioOS() {
                     onPointerCancel={endGesture}
                   >
                     <div className="traffic-lights" aria-label="窗口控制">
-                      <button className="traffic close" title="关闭" aria-label={`关闭${definition.title}窗口`} onPointerDown={(event) => { event.stopPropagation(); dispatch({ type: "FOCUS_WINDOW", appId }); }} onClick={() => closeApp(appId)} />
-                      <button className="traffic minimize" title="最小化" aria-label={`最小化${definition.title}窗口`} onPointerDown={(event) => { event.stopPropagation(); dispatch({ type: "FOCUS_WINDOW", appId }); }} onClick={() => minimizeApp(appId)} />
-                      <button className="traffic maximize" title="缩放或还原" aria-label={`缩放或还原${definition.title}窗口`} onPointerDown={(event) => { event.stopPropagation(); dispatch({ type: "FOCUS_WINDOW", appId }); }} onClick={() => toggleMaximize(appId)} />
+                      <button type="button" className="traffic close" aria-label={`关闭${definition.title}窗口`} onFocus={() => dispatch({ type: "FOCUS_WINDOW", appId })} onPointerDown={(event) => { event.stopPropagation(); dispatch({ type: "FOCUS_WINDOW", appId }); }} onClick={() => closeApp(appId)}>
+                        <SystemIcon name="close" size={8} strokeWidth={1.25} />
+                      </button>
+                      <button type="button" className="traffic minimize" aria-label={`最小化${definition.title}窗口`} onFocus={() => dispatch({ type: "FOCUS_WINDOW", appId })} onPointerDown={(event) => { event.stopPropagation(); dispatch({ type: "FOCUS_WINDOW", appId }); }} onClick={() => minimizeApp(appId)}>
+                        <SystemIcon name="minimize" size={8} strokeWidth={1.25} />
+                      </button>
+                      <button type="button" className="traffic maximize" aria-label={`${windowState.status === "maximized" ? "还原" : "缩放"}${definition.title}窗口`} onFocus={() => dispatch({ type: "FOCUS_WINDOW", appId })} onPointerDown={(event) => { event.stopPropagation(); dispatch({ type: "FOCUS_WINDOW", appId }); }} onClick={() => toggleMaximize(appId)}>
+                        <SystemIcon name={windowState.status === "maximized" ? "restore" : "maximize"} size={8} strokeWidth={1.25} />
+                      </button>
                     </div>
                     <button
                       className="window-title-control"
