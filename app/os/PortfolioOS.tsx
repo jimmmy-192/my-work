@@ -1276,7 +1276,7 @@ export function PortfolioOS() {
           const active = activeAppId === app.id;
           return (
             <button
-              className={`dock-app dock-magnify-item${app.id === "about" ? " dock-app--character" : ""}${app.id === "contact" ? " dock-app--contact" : ""}${active ? " is-active" : ""}`}
+              className={`dock-app dock-magnify-item${app.id === "work" ? " dock-app--works" : ""}${app.id === "about" ? " dock-app--character" : ""}${app.id === "contact" ? " dock-app--contact" : ""}${active ? " is-active" : ""}`}
               style={appStyle(app.accent)}
               aria-label={`${app.title}${running ? "，正在运行" : ""}`}
               key={app.id}
@@ -1285,9 +1285,12 @@ export function PortfolioOS() {
               }}
               onClick={() => openApp(app.id)}
             >
-              <span className={app.id === "about" || app.id === "contact" ? "dock-default-icon" : undefined} aria-hidden="true">
+              <span className={app.id === "work" || app.id === "about" || app.id === "contact" ? "dock-default-icon" : undefined} aria-hidden="true">
                 <AppIcon appId={app.id} size={24} />
               </span>
+              {app.id === "work" ? (
+                <span className="dock-works-art" aria-hidden="true" />
+              ) : null}
               {app.id === "about" ? (
                 <span className="dock-character-art" aria-hidden="true" />
               ) : null}
