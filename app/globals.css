@@ -115,10 +115,10 @@ a:focus-visible,
   --panel-strong: rgba(249, 253, 250, 0.93);
   --panel-soft: rgba(255, 255, 255, 0.29);
   --bar: rgba(238, 250, 243, 0.5);
-  --menu-bar-surface: rgba(3, 8, 13, 0.16);
+  --menu-bar-surface: rgba(248, 250, 252, 0.12);
   --menu-bar-highlight: rgba(255, 255, 255, 0.045);
   --menu-bar-edge: transparent;
-  --menu-bar-filter: blur(8px) saturate(112%) brightness(0.62);
+  --menu-bar-filter: blur(6px) saturate(112%);
   --menu-bar-ink: #fff;
   --menu-bar-shadow: none;
   --menu-bar-text-shadow: none;
@@ -175,10 +175,9 @@ a:focus-visible,
   --panel-strong: rgba(13, 29, 24, 0.94);
   --panel-soft: rgba(255, 255, 255, 0.07);
   --bar: rgba(10, 34, 27, 0.56);
-  --menu-bar-surface: rgba(0, 0, 0, 0.14);
+  --menu-bar-surface: rgba(0, 0, 0, 0.065);
   --menu-bar-highlight: rgba(255, 255, 255, 0.014);
   --menu-bar-edge: transparent;
-  --menu-bar-filter: blur(8px) saturate(112%) brightness(0.78);
   --menu-bar-ink: #fff;
   --menu-bar-shadow: none;
   --menu-bar-text-shadow: none;
@@ -325,11 +324,10 @@ a:focus-visible,
   background-color: #111b35;
 }
 
-/* The mountain photo is pale at the menu edge. Dim the backdrop enough to
-   preserve the white macOS menu treatment without adding a text shadow. */
+/* Preserve the light, clear material over the pale mountain sky. */
 .os-shell[data-theme="dark"][data-wallpaper="mountain"] {
-  --menu-bar-surface: rgba(0, 0, 0, 0.14);
-  --menu-bar-highlight: rgba(255, 255, 255, 0.025);
+  --menu-bar-surface: rgba(244, 246, 252, 0.14);
+  --menu-bar-highlight: rgba(255, 255, 255, 0.035);
   --menu-bar-ink: #fff;
   --menu-control-hover: rgba(0, 0, 0, 0.18);
   --menu-control-active: rgba(0, 0, 0, 0.28);
@@ -345,10 +343,10 @@ a:focus-visible,
   --panel: rgba(240, 251, 245, 0.51);
   --panel-strong: rgba(247, 253, 249, 0.78);
   --bar: rgba(238, 251, 244, 0.38);
-  --menu-bar-surface: rgba(0, 0, 0, 0.1);
+  --menu-bar-surface: rgba(248, 250, 252, 0.045);
   --menu-bar-highlight: transparent;
   --menu-bar-edge: transparent;
-  --menu-bar-filter: blur(5px) saturate(108%) brightness(0.58);
+  --menu-bar-filter: blur(3px) saturate(108%);
   --menu-bar-text-shadow: none;
   --menu-control-hover: rgba(0, 0, 0, 0.16);
   --menu-control-active: rgba(0, 0, 0, 0.26);
@@ -363,26 +361,25 @@ a:focus-visible,
   --panel: rgba(10, 35, 27, 0.52);
   --panel-strong: rgba(11, 29, 23, 0.78);
   --bar: rgba(8, 31, 24, 0.4);
-  --menu-bar-surface: rgba(0, 0, 0, 0.08);
-  --menu-bar-filter: blur(5px) saturate(108%) brightness(0.72);
+  --menu-bar-surface: rgba(0, 0, 0, 0.025);
   --menu-popover-surface: rgba(18, 24, 30, 0.45);
   --menu-popover-filter: blur(32px) saturate(155%) brightness(0.93);
   --card: rgba(255, 255, 255, 0.055);
 }
 
 .os-shell[data-theme="dark"][data-wallpaper="mountain"][data-glass="clear"] {
-  --menu-bar-surface: rgba(0, 0, 0, 0.08);
+  --menu-bar-surface: rgba(244, 246, 252, 0.1);
 }
 
 .os-shell[data-glass="readable"] {
   --panel: rgba(248, 252, 249, 0.96);
   --panel-strong: rgba(251, 253, 252, 0.99);
   --bar: rgba(246, 251, 248, 0.94);
-  --menu-bar-surface: rgba(15, 19, 24, 0.88);
-  --menu-bar-highlight: rgba(255, 255, 255, 0.06);
-  --menu-bar-edge: rgba(255, 255, 255, 0.18);
+  --menu-bar-surface: rgba(248, 250, 252, 0.9);
+  --menu-bar-highlight: rgba(255, 255, 255, 0.18);
+  --menu-bar-edge: rgba(255, 255, 255, 0.62);
   --menu-bar-filter: blur(8px) saturate(108%);
-  --menu-bar-ink: #fff;
+  --menu-bar-ink: var(--ink);
   --menu-bar-shadow: 0 1px 10px rgba(3, 18, 28, 0.08), inset 0 1px rgba(255, 255, 255, 0.2);
   --menu-bar-text-shadow: none;
   --menu-bar-icon-filter: none;
