@@ -86,6 +86,15 @@ test("clamps position and size inside a workspace", () => {
     ),
     { x: 4, y: 8, width: 280, height: 200 },
   );
+
+  assert.deepEqual(
+    clampBounds(
+      { x: 900, y: 600, width: 360, height: 260 },
+      workspace,
+      { width: 620, height: 460 },
+    ),
+    { x: 404, y: 216, width: 620, height: 460 },
+  );
 });
 
 test("move and resize enforce minimum dimensions and ignore maximized windows", () => {
@@ -182,8 +191,8 @@ test("centers a normal window in an offset workspace", () => {
 
 test("menus and search are mutually exclusive and close together", () => {
   let state = createInitialOSState();
-  state = osReducer(state, { type: "TOGGLE_MENU", menu: "file" });
-  assert.equal(state.activeMenu, "file");
+  state = osReducer(state, { type: "TOGGLE_MENU", menu: "go" });
+  assert.equal(state.activeMenu, "go");
 
   state = osReducer(state, { type: "SET_SEARCH", open: true });
   assert.equal(state.activeMenu, null);
@@ -200,4 +209,16 @@ test("menus and search are mutually exclusive and close together", () => {
   state = osReducer(state, { type: "CLOSE_OVERLAYS" });
   assert.equal(state.activeMenu, null);
   assert.equal(state.searchOpen, false);
+});
+
+test("activating the desktop keeps windows open and clears the active app", () => {
+  let state = open(createInitialOSState(), "work", workBounds);
+  state = osReducer(state, { type: "TOGGLE_MENU", menu: "window" });
+  state = osReducer(state, { type: "ACTIVATE_DESKTOP" });
+
+  assert.equal(state.activeWindowId, null);
+  assert.equal(state.activeMenu, null);
+  assert.equal(state.searchOpen, false);
+  assert.deepEqual(state.stack, ["welcome", "work"]);
+  assert.equal(state.windows.work?.status, "normal");
 });

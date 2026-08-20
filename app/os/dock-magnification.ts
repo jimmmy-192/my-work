@@ -1,6 +1,6 @@
-export const DOCK_MAGNIFICATION_RADIUS = 145;
-export const DOCK_MAX_SCALE = 1.62;
-export const DOCK_ICON_SIZE = 49;
+export const DOCK_MAGNIFICATION_RADIUS = 132;
+export const DOCK_MAX_SCALE = 1.28;
+export const DOCK_ICON_SIZE = 50;
 
 export interface DockMagnification {
   scale: number;

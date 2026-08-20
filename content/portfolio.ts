@@ -3,7 +3,6 @@ import type { AppId } from "../app/os/window-manager";
 export interface AppDefinition {
   id: AppId;
   title: string;
-  icon: string;
   accent: string;
   desktop: boolean;
   dock: boolean;
@@ -140,7 +139,6 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: "welcome",
     title: "欢迎",
-    icon: "⌂",
     accent: "#5d6fff",
     desktop: true,
     dock: true,
@@ -151,7 +149,6 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: "work",
     title: "作品",
-    icon: "▦",
     accent: "#7868ee",
     desktop: true,
     dock: true,
@@ -162,7 +159,6 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: "about",
     title: "关于我",
-    icon: "◎",
     accent: "#3aa68c",
     desktop: true,
     dock: true,
@@ -173,7 +169,6 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: "lab",
     title: "实验室",
-    icon: "✦",
     accent: "#bd62df",
     desktop: true,
     dock: true,
@@ -184,7 +179,6 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: "contact",
     title: "联系我",
-    icon: "@",
     accent: "#e46e78",
     desktop: true,
     dock: true,
@@ -195,7 +189,6 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: "settings",
     title: "设置",
-    icon: "◇",
     accent: "#657585",
     desktop: false,
     dock: true,
@@ -206,7 +199,6 @@ export const appDefinitions: AppDefinition[] = [
   {
     id: "trash",
     title: "废纸篓",
-    icon: "⌫",
     accent: "#789b91",
     desktop: true,
     dock: true,

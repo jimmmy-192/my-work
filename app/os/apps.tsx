@@ -1,4 +1,5 @@
 import { portfolioContent } from "../../content/portfolio";
+import { AppIcon, SystemIcon } from "./icons";
 import { WALLPAPER_OPTIONS } from "./preferences";
 import type { WallpaperPreference } from "./preferences";
 import type { AppId } from "./window-manager";
@@ -40,7 +41,7 @@ function WelcomeApp({ openApp }: Pick<AppContentProps, "openApp">) {
           <p className="welcome-intro">{hero.intro}</p>
           <div className="app-actions">
             <button className="primary-action" type="button" onClick={() => openApp("work")}>
-              浏览作品 <span aria-hidden="true">→</span>
+              浏览作品 <span aria-hidden="true"><SystemIcon name="arrowRight" size={16} /></span>
             </button>
             <button className="secondary-action" type="button" onClick={() => openApp("about")}>
               关于我
@@ -176,7 +177,9 @@ function ContactApp() {
 
   return (
     <article className="app-view contact-view">
-      <div className="contact-orb" aria-hidden="true"><span>@</span></div>
+      <div className="contact-orb" aria-hidden="true">
+        <span><AppIcon appId="contact" size={46} strokeWidth={1.75} /></span>
+      </div>
       <AppHeader eyebrow="CONTACT · SAY HELLO" title={contact.heading} intro={contact.intro} />
       <p className="response-note"><span aria-hidden="true" />{contact.responseTime}</p>
       <address className="contact-list">
@@ -184,7 +187,7 @@ function ContactApp() {
           <a href={link.href} key={link.label} target={link.href.startsWith("http") ? "_blank" : undefined} rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}>
             <span>{link.label}</span>
             <strong>{link.value}</strong>
-            <i aria-hidden="true">↗</i>
+            <i aria-hidden="true"><SystemIcon name="externalLink" size={16} /></i>
           </a>
         ))}
       </address>
@@ -217,7 +220,9 @@ function ChoiceGroup<T extends string>({
           >
             <span className={`setting-swatch setting-swatch-${option.value}`} aria-hidden="true" />
             <span><strong>{option.label}</strong><small>{option.description}</small></span>
-            <i aria-hidden="true">{value === option.value ? "✓" : ""}</i>
+            <i aria-hidden="true">
+              {value === option.value ? <SystemIcon name="check" size={15} strokeWidth={2.2} /> : null}
+            </i>
           </button>
         ))}
       </div>
@@ -252,7 +257,9 @@ function WallpaperGroup({
               <strong>{option.label}</strong>
               <small>{option.description}</small>
             </span>
-            <i aria-hidden="true">{value === option.value ? "✓" : ""}</i>
+            <i aria-hidden="true">
+              {value === option.value ? <SystemIcon name="check" size={15} strokeWidth={2.2} /> : null}
+            </i>
           </button>
         ))}
       </div>
@@ -305,7 +312,9 @@ function TrashApp() {
       <ul className="trash-list" aria-label="已放弃的方案">
         {trash.items.map((item) => (
           <li key={item.name}>
-            <span className="trash-file-icon" aria-hidden="true">◇</span>
+            <span className="trash-file-icon" aria-hidden="true">
+              <SystemIcon name="file" size={20} />
+            </span>
             <span><strong>{item.name}</strong><small>{item.meta}</small></span>
             <time>{item.date}</time>
           </li>

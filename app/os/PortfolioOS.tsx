@@ -18,6 +18,7 @@ import type {
 import { appDefinitions, portfolioContent } from "../../content/portfolio";
 import { AppContent } from "./apps";
 import { getDockMagnification } from "./dock-magnification";
+import { AppIcon, SystemIcon } from "./icons";
 import {
   isWallpaperPreference,
   readStoredPreference,
@@ -51,7 +52,7 @@ interface PointerGesture {
 
 interface MenuItem {
   label: string;
-  action: () => void | null;
+  action: () => void;
   shortcut?: string;
   disabled?: boolean;
 }
@@ -68,6 +69,8 @@ const GLASS_KEY = "myos-glass";
 const WALLPAPER_KEY = "myos-wallpaper-v2";
 const LEGACY_WALLPAPER_KEY = "myos-wallpaper";
 const MOUNTAIN_WALLPAPER_URL = "/wallpapers/snow-mountain.jpg";
+const MENU_ORDER = ["myos", "go", "window", "help"] as const;
+type MenuId = (typeof MENU_ORDER)[number];
 
 function formatTime(date: Date) {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -112,6 +115,8 @@ export function PortfolioOS() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileActiveApp, setMobileActiveApp] = useState<AppId | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchActiveIndex, setSearchActiveIndex] = useState(0);
+  const [menuLeft, setMenuLeft] = useState(8);
   const [workspace, setWorkspace] = useState<Bounds>(DEFAULT_WORKSPACE);
   const osShellRef = useRef<HTMLElement>(null);
   const windowLayerRef = useRef<HTMLDivElement>(null);
@@ -119,6 +124,14 @@ export function PortfolioOS() {
   const liquidCanvasHostRef = useRef<HTMLDivElement>(null);
   const dockLiquidTargetRef = useRef<HTMLSpanElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const menuPopoverRef = useRef<HTMLDivElement>(null);
+  const menuTriggerRefs = useRef<Partial<Record<MenuId, HTMLButtonElement>>>({});
+  const menuReturnFocusRef = useRef<HTMLButtonElement | null>(null);
+  const searchReturnFocusRef = useRef<HTMLElement | null>(null);
+  const searchWasOpenRef = useRef(false);
+  const searchShouldRestoreFocusRef = useRef(true);
+  const searchResultRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const windowRefs = useRef<Partial<Record<AppId, HTMLElement>>>({});
   const gestureRef = useRef<PointerGesture | null>(null);
   const dockPointerXRef = useRef<number | null>(null);
   const dockAnimationFrameRef = useRef<number | null>(null);
@@ -367,27 +380,81 @@ export function PortfolioOS() {
       observer.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
-    if (!state.searchOpen) return;
-    const timer = window.setTimeout(() => searchInputRef.current?.focus(), 30);
-    return () => window.clearTimeout(timer);
+    const layer = windowLayerRef.current;
+    if (!layer) return;
+    const focusWindowFromPointer = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const windowElement = target.closest<HTMLElement>("[data-window-app]");
+      const appId = windowElement?.dataset.windowApp as AppId | undefined;
+      if (appId && definitions.has(appId)) {
+        dispatch({ type: "FOCUS_WINDOW", appId });
+      }
+    };
+    layer.addEventListener("pointerdown", focusWindowFromPointer);
+    return () => layer.removeEventListener("pointerdown", focusWindowFromPointer);
+  }, [definitions, isMobile]);
+
+  useEffect(() => {
+    if (state.searchOpen) {
+      searchWasOpenRef.current = true;
+      const timer = window.setTimeout(() => searchInputRef.current?.focus(), 30);
+      return () => window.clearTimeout(timer);
+    }
+
+    if (searchWasOpenRef.current) {
+      searchWasOpenRef.current = false;
+      if (!searchShouldRestoreFocusRef.current) {
+        searchShouldRestoreFocusRef.current = true;
+        return;
+      }
+      const timer = window.setTimeout(() => {
+        const target = searchReturnFocusRef.current;
+        if (target?.isConnected) target.focus();
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
   }, [state.searchOpen]);
 
   useEffect(() => {
-    const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        dispatch({ type: "SET_SEARCH", open: true });
-        return;
-      }
-      if (event.key === "Escape") {
-        dispatch({ type: "CLOSE_OVERLAYS" });
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    if (!state.activeMenu) return;
+    const timer = window.setTimeout(() => {
+      menuPopoverRef.current
+        ?.querySelector<HTMLButtonElement>("button:not(:disabled)")
+        ?.focus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [state.activeMenu]);
+
+  const openSearch = useCallback(() => {
+    const activeElement = document.activeElement;
+    searchReturnFocusRef.current =
+      activeElement instanceof HTMLElement
+        ? activeElement.closest(".menu-popover")
+          ? menuReturnFocusRef.current
+          : activeElement
+        : null;
+    searchShouldRestoreFocusRef.current = true;
+    setSearchActiveIndex(0);
+    dispatch({ type: "SET_SEARCH", open: true });
+  }, []);
+
+  const closeMenuAndRestoreFocus = useCallback(() => {
+    dispatch({ type: "CLOSE_OVERLAYS" });
+    window.setTimeout(() => {
+      const target = menuReturnFocusRef.current;
+      if (target?.isConnected) target.focus();
+    }, 0);
+  }, []);
+
+  const toggleMenu = useCallback((menu: MenuId, trigger: HTMLButtonElement) => {
+    menuReturnFocusRef.current = trigger;
+    const triggerLeft = trigger.getBoundingClientRect().left;
+    setMenuLeft(Math.max(8, Math.min(triggerLeft, window.innerWidth - 240)));
+    dispatch({ type: "TOGGLE_MENU", menu });
   }, []);
 
   const openApp = useCallback(
@@ -402,9 +469,13 @@ export function PortfolioOS() {
           y: definition.defaultBounds.y + offset,
         },
         workspace,
+        definition.minSize,
       );
       dispatch({ type: "OPEN_APP", appId, bounds: requested });
       if (isMobile) setMobileActiveApp(appId);
+      else {
+        window.setTimeout(() => windowRefs.current[appId]?.focus(), 0);
+      }
     },
     [definitions, isMobile, state.stack.length, workspace],
   );
@@ -413,6 +484,13 @@ export function PortfolioOS() {
     (appId: AppId) => {
       dispatch({ type: "MINIMIZE_WINDOW", appId });
       if (isMobile) setMobileActiveApp(null);
+      else {
+        window.setTimeout(() => {
+          document
+            .querySelector<HTMLButtonElement>(".os-window.is-active .window-title-control")
+            ?.focus();
+        }, 0);
+      }
     },
     [isMobile],
   );
@@ -421,14 +499,59 @@ export function PortfolioOS() {
     (appId: AppId) => {
       dispatch({ type: "CLOSE_WINDOW", appId });
       if (isMobile) setMobileActiveApp(null);
+      else {
+        window.setTimeout(() => {
+          document
+            .querySelector<HTMLButtonElement>(".os-window.is-active .window-title-control")
+            ?.focus();
+        }, 0);
+      }
     },
     [isMobile],
   );
+
+  const returnToMobileDesktop = useCallback(() => {
+    setMobileActiveApp(null);
+  }, []);
 
   const toggleMaximize = useCallback(
     (appId: AppId) => dispatch({ type: "TOGGLE_MAXIMIZE", appId, workspace }),
     [workspace],
   );
+
+  useEffect(() => {
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      const command = event.metaKey || event.ctrlKey;
+      const key = event.key.toLowerCase();
+
+      if (command && key === "k") {
+        event.preventDefault();
+        openSearch();
+        return;
+      }
+      if (command && key === "w" && state.activeWindowId) {
+        event.preventDefault();
+        closeApp(state.activeWindowId);
+        return;
+      }
+      if (command && key === "m" && state.activeWindowId) {
+        event.preventDefault();
+        minimizeApp(state.activeWindowId);
+        return;
+      }
+      if (command && (event.key === "?" || (event.shiftKey && event.key === "/"))) {
+        event.preventDefault();
+        openApp("welcome");
+        return;
+      }
+      if (event.key === "Escape") {
+        if (state.activeMenu) closeMenuAndRestoreFocus();
+        else dispatch({ type: "CLOSE_OVERLAYS" });
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [closeApp, closeMenuAndRestoreFocus, minimizeApp, openApp, openSearch, state.activeMenu, state.activeWindowId]);
 
   const beginGesture = (
     event: ReactPointerEvent<HTMLElement>,
@@ -440,7 +563,11 @@ export function PortfolioOS() {
     if (isMobile || windowState.status !== "normal") return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    const fitted = clampBounds(windowState.bounds, workspace);
+    const fitted = clampBounds(
+      windowState.bounds,
+      workspace,
+      definitions.get(appId)?.minSize,
+    );
     gestureRef.current = {
       appId,
       pointerId: event.pointerId,
@@ -471,18 +598,25 @@ export function PortfolioOS() {
     }
 
     const edge = gesture.edge ?? "se";
+    const minimum = definitions.get(gesture.appId)?.minSize;
     const next = { ...gesture.startBounds };
-    if (edge.includes("e")) next.width = Math.max(MIN_WIDTH, gesture.startBounds.width + dx);
-    if (edge.includes("s")) next.height = Math.max(MIN_HEIGHT, gesture.startBounds.height + dy);
+    const minWidth = Math.max(MIN_WIDTH, minimum?.width ?? MIN_WIDTH);
+    const minHeight = Math.max(MIN_HEIGHT, minimum?.height ?? MIN_HEIGHT);
+    if (edge.includes("e")) next.width = Math.max(minWidth, gesture.startBounds.width + dx);
+    if (edge.includes("s")) next.height = Math.max(minHeight, gesture.startBounds.height + dy);
     if (edge.includes("w")) {
-      next.width = Math.max(MIN_WIDTH, gesture.startBounds.width - dx);
+      next.width = Math.max(minWidth, gesture.startBounds.width - dx);
       next.x = gesture.startBounds.x + (gesture.startBounds.width - next.width);
     }
     if (edge.includes("n")) {
-      next.height = Math.max(MIN_HEIGHT, gesture.startBounds.height - dy);
+      next.height = Math.max(minHeight, gesture.startBounds.height - dy);
       next.y = gesture.startBounds.y + (gesture.startBounds.height - next.height);
     }
-    dispatch({ type: "RESIZE_WINDOW", appId: gesture.appId, bounds: clampBounds(next, workspace) });
+    dispatch({
+      type: "RESIZE_WINDOW",
+      appId: gesture.appId,
+      bounds: clampBounds(next, workspace, minimum),
+    });
   };
 
   const endGesture = (event: ReactPointerEvent<HTMLElement>) => {
@@ -493,13 +627,14 @@ export function PortfolioOS() {
     gestureRef.current = null;
   };
 
-  const handleTitleKey = (event: KeyboardEvent<HTMLDivElement>, appId: AppId, windowState: WindowState) => {
+  const handleTitleKey = (event: KeyboardEvent<HTMLElement>, appId: AppId, windowState: WindowState) => {
     if (windowState.status !== "normal") {
       if (event.key === "Enter") toggleMaximize(appId);
       return;
     }
     const step = 16;
-    const next = clampBounds(windowState.bounds, workspace);
+    const minimum = definitions.get(appId)?.minSize;
+    const next = clampBounds(windowState.bounds, workspace, minimum);
     if (event.key === "Home") {
       event.preventDefault();
       dispatch({ type: "CENTER_WINDOW", appId, workspace });
@@ -517,13 +652,21 @@ export function PortfolioOS() {
       if (event.key === "ArrowRight") next.width += step;
       if (event.key === "ArrowUp") next.height -= step;
       if (event.key === "ArrowDown") next.height += step;
-      dispatch({ type: "RESIZE_WINDOW", appId, bounds: clampBounds(next, workspace) });
+      dispatch({
+        type: "RESIZE_WINDOW",
+        appId,
+        bounds: clampBounds(next, workspace, minimum),
+      });
     } else {
       if (event.key === "ArrowLeft") next.x -= step;
       if (event.key === "ArrowRight") next.x += step;
       if (event.key === "ArrowUp") next.y -= step;
       if (event.key === "ArrowDown") next.y += step;
-      dispatch({ type: "MOVE_WINDOW", appId, bounds: clampBounds(next, workspace) });
+      dispatch({
+        type: "MOVE_WINDOW",
+        appId,
+        bounds: clampBounds(next, workspace, minimum),
+      });
     }
   };
 
@@ -534,42 +677,172 @@ export function PortfolioOS() {
     return `${app.title} ${app.description} ${app.id}`.toLowerCase().includes(query);
   });
 
-  const menus: Record<string, MenuItem[]> = {
+  const selectSearchResult = (appId: AppId) => {
+    searchShouldRestoreFocusRef.current = false;
+    openApp(appId);
+    setSearchTerm("");
+    setSearchActiveIndex(0);
+  };
+
+  const moveSearchSelection = (nextIndex: number) => {
+    if (searchedApps.length === 0) return;
+    const index = (nextIndex + searchedApps.length) % searchedApps.length;
+    setSearchActiveIndex(index);
+    window.requestAnimationFrame(() => {
+      searchResultRefs.current[index]?.scrollIntoView({ block: "nearest" });
+    });
+  };
+
+  const handleSearchInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      moveSearchSelection(searchActiveIndex + 1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      moveSearchSelection(searchActiveIndex - 1);
+    } else if (event.key === "Enter" && searchedApps[searchActiveIndex]) {
+      event.preventDefault();
+      selectSearchResult(searchedApps[searchActiveIndex].id);
+    }
+  };
+
+  const handleSearchDialogKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Tab") return;
+    const focusable = [
+      searchInputRef.current,
+      ...searchResultRefs.current.slice(0, searchedApps.length),
+    ].filter(
+      (item): item is HTMLInputElement | HTMLButtonElement => item !== null,
+    );
+    if (focusable.length === 0) return;
+    const currentIndex = focusable.indexOf(
+      document.activeElement as HTMLInputElement | HTMLButtonElement,
+    );
+    const nextIndex = event.shiftKey
+      ? currentIndex <= 0
+        ? focusable.length - 1
+        : currentIndex - 1
+      : currentIndex >= focusable.length - 1
+        ? 0
+        : currentIndex + 1;
+    event.preventDefault();
+    focusable[nextIndex]?.focus();
+  };
+
+  const handleMenuTriggerKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    menu: MenuId,
+  ) => {
+    const currentIndex = MENU_ORDER.indexOf(menu);
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (state.activeMenu !== menu) {
+        toggleMenu(menu, event.currentTarget);
+      } else {
+        const items = Array.from(
+          menuPopoverRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [],
+        );
+        const targetIndex = event.key === "ArrowUp" ? items.length - 1 : 0;
+        items[targetIndex]?.focus();
+      }
+      return;
+    }
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    const nextMenu = MENU_ORDER[(currentIndex + direction + MENU_ORDER.length) % MENU_ORDER.length];
+    const nextTrigger = menuTriggerRefs.current[nextMenu];
+    if (!nextTrigger) return;
+    nextTrigger.focus();
+    if (state.activeMenu) toggleMenu(nextMenu, nextTrigger);
+  };
+
+  const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const items = Array.from(
+      event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
+    );
+    if (items.length === 0) return;
+    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+    let nextIndex: number | null = null;
+
+    if (event.key === "ArrowDown") nextIndex = (currentIndex + 1) % items.length;
+    if (event.key === "ArrowUp") nextIndex = (currentIndex - 1 + items.length) % items.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = items.length - 1;
+    if (nextIndex !== null) {
+      event.preventDefault();
+      items[nextIndex]?.focus();
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenuAndRestoreFocus();
+      return;
+    }
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      const currentMenuIndex = MENU_ORDER.indexOf(state.activeMenu as MenuId);
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const nextMenu = MENU_ORDER[
+        (currentMenuIndex + direction + MENU_ORDER.length) % MENU_ORDER.length
+      ];
+      const trigger = menuTriggerRefs.current[nextMenu];
+      if (trigger) toggleMenu(nextMenu, trigger);
+    }
+  };
+
+  const menus: Record<MenuId, MenuItem[]> = {
         myos: [
           { label: "关于 MyOS", action: () => openApp("about") },
-          { label: "桌面与外观设置…", action: () => openApp("settings"), shortcut: "⌘," },
+          { label: "系统设置…", action: () => openApp("settings") },
         ],
-        file: [
-          { label: "打开作品", action: () => openApp("work"), shortcut: "↵" },
-          {
-            label: "关闭当前窗口",
-            action: () => state.activeWindowId && closeApp(state.activeWindowId),
-            disabled: !state.activeWindowId,
-          },
+        go: [
+          { label: "欢迎", action: () => openApp("welcome") },
+          { label: "作品", action: () => openApp("work") },
+          { label: "关于我", action: () => openApp("about") },
+          { label: "实验室", action: () => openApp("lab") },
+          { label: "联系我", action: () => openApp("contact") },
         ],
         window: [
           {
+            label: "关闭当前窗口",
+            action: () => {
+              if (state.activeWindowId) closeApp(state.activeWindowId);
+            },
+            shortcut: "⌘W",
+            disabled: !state.activeWindowId,
+          },
+          {
             label: "最小化",
-            action: () => state.activeWindowId && minimizeApp(state.activeWindowId),
+            action: () => {
+              if (state.activeWindowId) minimizeApp(state.activeWindowId);
+            },
+            shortcut: "⌘M",
             disabled: !activeWindow,
           },
           {
-            label: activeWindow?.status === "maximized" ? "还原窗口" : "最大化",
-            action: () => state.activeWindowId && toggleMaximize(state.activeWindowId),
+            label: activeWindow?.status === "maximized" ? "还原原始大小" : "缩放窗口",
+            action: () => {
+              if (state.activeWindowId) toggleMaximize(state.activeWindowId);
+            },
             disabled: !activeWindow,
           },
           {
             label: "窗口居中",
-            action: () => state.activeWindowId && dispatch({ type: "CENTER_WINDOW", appId: state.activeWindowId, workspace }),
+            action: () => {
+              if (state.activeWindowId) {
+                dispatch({ type: "CENTER_WINDOW", appId: state.activeWindowId, workspace });
+              }
+            },
             disabled: !activeWindow || activeWindow.status !== "normal",
           },
         ],
         help: [
-          { label: "打开使用说明", action: () => openApp("welcome") },
-          { label: "搜索应用", action: () => dispatch({ type: "SET_SEARCH", open: true }), shortcut: "⌘K" },
+          { label: "MyOS 使用说明", action: () => openApp("welcome"), shortcut: "⌘?" },
+          { label: "快速打开…", action: openSearch, shortcut: "⌘K" },
         ],
       };
-  const menuItems = state.activeMenu ? menus[state.activeMenu] : undefined;
+  const menuItems = state.activeMenu ? menus[state.activeMenu as MenuId] : undefined;
 
   return (
     <main
@@ -595,19 +868,38 @@ export function PortfolioOS() {
           <button
             className="monogram"
             aria-label="打开 MyOS 菜单"
+            aria-haspopup="menu"
             aria-expanded={state.activeMenu === "myos"}
-            onClick={() => dispatch({ type: "TOGGLE_MENU", menu: "myos" })}
+            ref={(element) => {
+              if (element) menuTriggerRefs.current.myos = element;
+            }}
+            onClick={(event) => toggleMenu("myos", event.currentTarget)}
+            onKeyDown={(event) => handleMenuTriggerKeyDown(event, "myos")}
+            onPointerEnter={(event) => {
+              if (state.activeMenu && state.activeMenu !== "myos") {
+                toggleMenu("myos", event.currentTarget);
+              }
+            }}
           >
             {portfolioContent.monogram}
           </button>
           <strong className="active-app-name">{activeApp?.title ?? "桌面"}</strong>
-          {[{ id: "file", label: "文件" }, { id: "window", label: "窗口" }, { id: "help", label: "帮助" }].map((menu) => (
+          {([{ id: "go", label: "前往" }, { id: "window", label: "窗口" }, { id: "help", label: "帮助" }] as const).map((menu) => (
             <button
               className="desktop-menu-button"
               key={menu.id}
               aria-haspopup="menu"
               aria-expanded={state.activeMenu === menu.id}
-              onClick={() => dispatch({ type: "TOGGLE_MENU", menu: menu.id })}
+              ref={(element) => {
+                if (element) menuTriggerRefs.current[menu.id] = element;
+              }}
+              onClick={(event) => toggleMenu(menu.id, event.currentTarget)}
+              onKeyDown={(event) => handleMenuTriggerKeyDown(event, menu.id)}
+              onPointerEnter={(event) => {
+                if (state.activeMenu && state.activeMenu !== menu.id) {
+                  toggleMenu(menu.id, event.currentTarget);
+                }
+              }}
             >
               {menu.label}
             </button>
@@ -619,29 +911,39 @@ export function PortfolioOS() {
             aria-label={`切换外观，当前为${resolvedTheme === "dark" ? "深色" : "浅色"}`}
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           >
-            ◐
+            <SystemIcon name="appearance" size={15} />
           </button>
           <button
             className="status-button"
-            aria-label="搜索应用"
-            onClick={() => dispatch({ type: "SET_SEARCH", open: true })}
+            aria-label="快速打开应用"
+            onClick={openSearch}
           >
-            ⌕
+            <SystemIcon name="search" size={15} />
           </button>
           <time suppressHydrationWarning>{clock}</time>
         </div>
       </header>
 
       {menuItems ? (
-        <div className="menu-popover" data-menu={state.activeMenu} data-liquid-ignore="" role="menu">
+        <div
+          ref={menuPopoverRef}
+          className="menu-popover"
+          data-menu={state.activeMenu}
+          data-liquid-ignore=""
+          role="menu"
+          tabIndex={-1}
+          style={{ left: menuLeft }}
+          aria-label={`${menuTriggerRefs.current[state.activeMenu as MenuId]?.textContent?.trim() || "MyOS"}菜单`}
+          onKeyDown={handleMenuKeyDown}
+        >
           {menuItems.map((item) => (
             <button
               key={item.label}
               role="menuitem"
               disabled={item.disabled}
               onClick={() => {
+                closeMenuAndRestoreFocus();
                 item.action();
-                dispatch({ type: "CLOSE_OVERLAYS" });
               }}
             >
               <span>{item.label}</span>
@@ -655,13 +957,19 @@ export function PortfolioOS() {
         className="desktop"
         data-liquid-ignore=""
         aria-label="桌面"
-        onPointerDown={() => dispatch({ type: "CLOSE_OVERLAYS" })}
+        onPointerDown={(event) => {
+          if (event.target === event.currentTarget) {
+            dispatch({ type: "ACTIVATE_DESKTOP" });
+          }
+        }}
       >
         {!isMobile ? (
           <div className="desktop-icons" aria-label="桌面快捷方式">
             {appDefinitions.filter((app) => app.desktop && app.id !== "welcome").map((app) => (
               <button className="desktop-shortcut" key={app.id} onClick={() => openApp(app.id)}>
-                <span className="app-tile" style={appStyle(app.accent)} aria-hidden="true">{app.icon}</span>
+                <span className="app-tile" style={appStyle(app.accent)} aria-hidden="true">
+                  <AppIcon appId={app.id} />
+                </span>
                 <span>{app.title}</span>
               </button>
             ))}
@@ -676,34 +984,44 @@ export function PortfolioOS() {
               if (!windowState || !definition || windowState.status === "minimized") return null;
               const fitted = windowState.status === "maximized"
                 ? { ...workspace }
-                : clampBounds(windowState.bounds, workspace);
+                : clampBounds(windowState.bounds, workspace, definition.minSize);
               const isActive = state.activeWindowId === appId;
               return (
                 <section
                   className={`os-window${isActive ? " is-active" : ""}${windowState.status === "maximized" ? " is-maximized" : ""}`}
                   style={{ left: fitted.x, top: fitted.y, width: fitted.width, height: fitted.height, zIndex: 100 + stackIndex }}
                   aria-labelledby={`window-title-${appId}`}
+                  data-window-app={appId}
                   key={appId}
-                  onPointerDown={() => dispatch({ type: "FOCUS_WINDOW", appId })}
                 >
                   <div
                     className="window-titlebar"
-                    role="toolbar"
-                    tabIndex={0}
-                    aria-label={`${definition.title}窗口标题栏。方向键移动，Shift 加方向键调整大小，回车最大化，Home 居中。`}
+                    role="group"
+                    aria-label={`${definition.title}窗口标题栏`}
                     onDoubleClick={() => toggleMaximize(appId)}
                     onPointerDown={(event) => beginGesture(event, appId, windowState, "move")}
                     onPointerMove={continueGesture}
                     onPointerUp={endGesture}
                     onPointerCancel={endGesture}
-                    onKeyDown={(event) => handleTitleKey(event, appId, windowState)}
                   >
                     <div className="traffic-lights" aria-label="窗口控制">
-                      <button className="traffic close" title="关闭" aria-label={`关闭${definition.title}窗口`} onPointerDown={(event) => event.stopPropagation()} onClick={() => closeApp(appId)} />
-                      <button className="traffic minimize" title="最小化" aria-label={`最小化${definition.title}窗口`} onPointerDown={(event) => event.stopPropagation()} onClick={() => minimizeApp(appId)} />
-                      <button className="traffic maximize" title="最大化或还原" aria-label={`最大化或还原${definition.title}窗口`} onPointerDown={(event) => event.stopPropagation()} onClick={() => toggleMaximize(appId)} />
+                      <button className="traffic close" title="关闭" aria-label={`关闭${definition.title}窗口`} onPointerDown={(event) => { event.stopPropagation(); dispatch({ type: "FOCUS_WINDOW", appId }); }} onClick={() => closeApp(appId)} />
+                      <button className="traffic minimize" title="最小化" aria-label={`最小化${definition.title}窗口`} onPointerDown={(event) => { event.stopPropagation(); dispatch({ type: "FOCUS_WINDOW", appId }); }} onClick={() => minimizeApp(appId)} />
+                      <button className="traffic maximize" title="缩放或还原" aria-label={`缩放或还原${definition.title}窗口`} onPointerDown={(event) => { event.stopPropagation(); dispatch({ type: "FOCUS_WINDOW", appId }); }} onClick={() => toggleMaximize(appId)} />
                     </div>
-                    <strong id={`window-title-${appId}`}><span aria-hidden="true">{definition.icon}</span>{definition.title}</strong>
+                    <button
+                      className="window-title-control"
+                      id={`window-title-${appId}`}
+                      type="button"
+                      ref={(element) => {
+                        if (element) windowRefs.current[appId] = element;
+                      }}
+                      aria-label={`${definition.title}窗口。方向键移动，Shift 加方向键调整大小，回车缩放，Home 居中。`}
+                      onKeyDown={(event) => handleTitleKey(event, appId, windowState)}
+                    >
+                      <span aria-hidden="true"><AppIcon appId={appId} size={14} /></span>
+                      {definition.title}
+                    </button>
                     <span className="titlebar-spacer" />
                   </div>
                   <div className="window-content">
@@ -738,9 +1056,12 @@ export function PortfolioOS() {
         ) : mobileActiveApp ? (
           <section className="mobile-app-panel" aria-labelledby={`mobile-title-${mobileActiveApp}`}>
             <header className="mobile-app-titlebar">
-              <button aria-label="最小化并返回桌面" onClick={() => minimizeApp(mobileActiveApp)}>—</button>
+              <button className="mobile-back-button" aria-label="返回桌面" onClick={returnToMobileDesktop}>
+                <SystemIcon name="back" size={20} />
+                <span>桌面</span>
+              </button>
               <strong id={`mobile-title-${mobileActiveApp}`}>{definitions.get(mobileActiveApp)?.title}</strong>
-              <button aria-label="关闭并返回桌面" onClick={() => closeApp(mobileActiveApp)}>×</button>
+              <span aria-hidden="true" />
             </header>
             <div className="mobile-app-content">
               <AppContent
@@ -765,7 +1086,9 @@ export function PortfolioOS() {
             <div className="launcher-grid">
               {appDefinitions.filter((app) => app.id !== "trash").map((app) => (
                 <button key={app.id} onClick={() => openApp(app.id)}>
-                  <span className="app-tile" style={appStyle(app.accent)} aria-hidden="true">{app.icon}</span>
+                  <span className="app-tile" style={appStyle(app.accent)} aria-hidden="true">
+                    <AppIcon appId={app.id} size={30} />
+                  </span>
                   <strong>{app.title}</strong>
                 </button>
               ))}
@@ -775,25 +1098,66 @@ export function PortfolioOS() {
       </section>
 
       {state.searchOpen ? (
-        <div className="spotlight-backdrop" data-liquid-ignore="" role="presentation" onPointerDown={() => dispatch({ type: "SET_SEARCH", open: false })}>
-          <section className="spotlight" role="dialog" aria-modal="true" aria-label="搜索应用" onPointerDown={(event) => event.stopPropagation()}>
+        <div
+          className="spotlight-backdrop"
+          data-liquid-ignore=""
+          role="presentation"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) {
+              dispatch({ type: "SET_SEARCH", open: false });
+            }
+          }}
+        >
+          <section
+            className="spotlight"
+            role="dialog"
+            aria-modal="true"
+            aria-label="快速打开应用"
+          >
             <label className="spotlight-input">
-              <span aria-hidden="true">⌕</span>
+              <span aria-hidden="true"><SystemIcon name="search" size={22} /></span>
               <input
                 ref={searchInputRef}
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="搜索作品、关于我或设置…"
-                aria-label="搜索应用"
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                  setSearchActiveIndex(0);
+                }}
+                onKeyDown={(event) => {
+                  handleSearchInputKeyDown(event);
+                  handleSearchDialogKeyDown(event);
+                }}
+                placeholder="快速打开作品、关于我或设置…"
+                aria-label="快速打开应用"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="search-results"
+                aria-expanded="true"
+                aria-activedescendant={searchedApps[searchActiveIndex] ? `search-result-${searchedApps[searchActiveIndex].id}` : undefined}
               />
               <kbd>ESC</kbd>
             </label>
-            <div className="spotlight-results" aria-label="搜索结果">
-              {searchedApps.map((app) => (
-                <button key={app.id} onClick={() => { openApp(app.id); setSearchTerm(""); }}>
-                  <span className="search-app-icon" style={appStyle(app.accent)} aria-hidden="true">{app.icon}</span>
+            <div id="search-results" className="spotlight-results" role="listbox" aria-label="搜索结果">
+              {searchedApps.map((app, index) => (
+                <button
+                  id={`search-result-${app.id}`}
+                  className={index === searchActiveIndex ? "is-selected" : undefined}
+                  role="option"
+                  aria-selected={index === searchActiveIndex}
+                  ref={(element) => {
+                    searchResultRefs.current[index] = element;
+                  }}
+                  key={app.id}
+                  onPointerEnter={() => setSearchActiveIndex(index)}
+                  onFocus={() => setSearchActiveIndex(index)}
+                  onKeyDown={handleSearchDialogKeyDown}
+                  onClick={() => selectSearchResult(app.id)}
+                >
+                  <span className="search-app-icon" style={appStyle(app.accent)} aria-hidden="true">
+                    <AppIcon appId={app.id} size={20} />
+                  </span>
                   <span><strong>{app.title}</strong><small>{app.description}</small></span>
-                  <i aria-hidden="true">↵</i>
+                  <i aria-hidden="true"><SystemIcon name="return" size={15} /></i>
                 </button>
               ))}
               {searchedApps.length === 0 ? <p>没有找到匹配的应用。</p> : null}
@@ -804,7 +1168,7 @@ export function PortfolioOS() {
 
       <nav
         ref={dockRef}
-        className="dock"
+        className={`dock${isMobile && mobileActiveApp ? " is-mobile-hidden" : ""}`}
         data-liquid-ignore=""
         aria-label="应用程序 Dock"
         onPointerMove={handleDockPointerMove}
@@ -828,7 +1192,7 @@ export function PortfolioOS() {
               key={app.id}
               onClick={() => openApp(app.id)}
             >
-              <span aria-hidden="true">{app.icon}</span>
+              <span aria-hidden="true"><AppIcon appId={app.id} size={24} /></span>
               <small>{app.title}</small>
               {running ? <i className="running-dot" /> : null}
             </button>
@@ -841,14 +1205,16 @@ export function PortfolioOS() {
           if (!app) return null;
           return (
             <button className="minimized-window dock-magnify-item" key={`min-${app.id}`} aria-label={`恢复${app.title}窗口`} onClick={() => openApp(app.id)}>
-              <span style={appStyle(app.accent)}>{app.icon}</span>
+              <span style={appStyle(app.accent)} aria-hidden="true">
+                <AppIcon appId={app.id} size={16} />
+              </span>
               <small>{app.title}</small>
             </button>
           );
         })}
         <span className="dock-divider" />
         <button className="dock-app dock-trash dock-magnify-item" style={appStyle(definitions.get("trash")?.accent ?? "#789b91")} aria-label="废纸篓" onClick={() => openApp("trash")}>
-          <span aria-hidden="true">⌫</span>
+          <span aria-hidden="true"><AppIcon appId="trash" size={24} /></span>
           <small>废纸篓</small>
           {state.windows.trash ? <i className="running-dot" /> : null}
         </button>

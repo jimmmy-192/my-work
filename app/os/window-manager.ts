@@ -14,6 +14,11 @@ export interface Bounds {
   height: number;
 }
 
+export interface MinimumSize {
+  width: number;
+  height: number;
+}
+
 export type WindowStatus = "normal" | "minimized" | "maximized";
 
 export interface WindowState {
@@ -41,6 +46,7 @@ export type OSAction =
   | { type: "TOGGLE_MAXIMIZE"; appId: AppId; workspace: Bounds }
   | { type: "CLOSE_WINDOW"; appId: AppId }
   | { type: "CENTER_WINDOW"; appId: AppId; workspace: Bounds }
+  | { type: "ACTIVATE_DESKTOP" }
   | { type: "TOGGLE_MENU"; menu: string }
   | { type: "CLOSE_OVERLAYS" }
   | { type: "SET_SEARCH"; open: boolean };
@@ -85,10 +91,20 @@ function workspaceBounds(workspace: Bounds): Bounds {
  * Fits a window wholly inside a desktop workspace. On an exceptionally small
  * workspace, staying visible takes precedence over the desktop minimum size.
  */
-export function clampBounds(bounds: Bounds, workspace: Bounds): Bounds {
+export function clampBounds(
+  bounds: Bounds,
+  workspace: Bounds,
+  minimum: MinimumSize = { width: MIN_WIDTH, height: MIN_HEIGHT },
+): Bounds {
   const area = workspaceBounds(workspace);
-  const minWidth = Math.min(MIN_WIDTH, area.width);
-  const minHeight = Math.min(MIN_HEIGHT, area.height);
+  const minWidth = Math.min(
+    Math.max(MIN_WIDTH, finiteOr(minimum.width, MIN_WIDTH)),
+    area.width,
+  );
+  const minHeight = Math.min(
+    Math.max(MIN_HEIGHT, finiteOr(minimum.height, MIN_HEIGHT)),
+    area.height,
+  );
   const width = Math.min(
     area.width,
     Math.max(minWidth, finiteOr(bounds.width, minWidth)),
@@ -321,6 +337,14 @@ export function osReducer(state: OSState, action: OSAction): OSState {
         },
       }));
     }
+
+    case "ACTIVATE_DESKTOP":
+      return {
+        ...state,
+        activeWindowId: null,
+        activeMenu: null,
+        searchOpen: false,
+      };
 
     case "TOGGLE_MENU":
       return {
