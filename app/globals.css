@@ -91,8 +91,21 @@ a:focus-visible,
   --panel-strong: rgba(249, 253, 250, 0.93);
   --panel-soft: rgba(255, 255, 255, 0.29);
   --bar: rgba(238, 250, 243, 0.5);
-  --menu-bar-surface: rgba(238, 250, 243, 0.28);
-  --menu-bar-filter: blur(16px) saturate(140%);
+  --menu-bar-surface: rgba(248, 250, 253, 0.06);
+  --menu-bar-highlight: rgba(255, 255, 255, 0.08);
+  --menu-bar-edge: rgba(255, 255, 255, 0.2);
+  --menu-bar-filter: blur(12px) saturate(155%);
+  --menu-bar-text-shadow: 0 1px 2px rgba(255, 255, 255, 0.38);
+  --menu-control-hover: rgba(255, 255, 255, 0.18);
+  --menu-control-active: rgba(255, 255, 255, 0.26);
+  --menu-popover-surface: rgba(246, 248, 252, 0.72);
+  --menu-popover-ink: #20242b;
+  --menu-popover-highlight: rgba(255, 255, 255, 0.34);
+  --menu-popover-edge: rgba(255, 255, 255, 0.62);
+  --menu-popover-filter: blur(34px) saturate(170%) brightness(1.03);
+  --menu-popover-shadow: 0 24px 64px rgba(18, 27, 40, 0.24), 0 3px 14px rgba(18, 27, 40, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.72), inset 0 0 0 0.5px rgba(255, 255, 255, 0.26);
+  --menu-separator: rgba(28, 39, 52, 0.13);
+  --menu-selection: #0a84ff;
   --line: rgba(255, 255, 255, 0.66);
   --line-subtle: rgba(20, 67, 50, 0.12);
   --control-hover: rgba(255, 255, 255, 0.38);
@@ -134,7 +147,19 @@ a:focus-visible,
   --panel-strong: rgba(13, 29, 24, 0.94);
   --panel-soft: rgba(255, 255, 255, 0.07);
   --bar: rgba(10, 34, 27, 0.56);
-  --menu-bar-surface: rgba(10, 34, 27, 0.34);
+  --menu-bar-surface: rgba(8, 12, 17, 0.08);
+  --menu-bar-highlight: rgba(255, 255, 255, 0.04);
+  --menu-bar-edge: rgba(255, 255, 255, 0.14);
+  --menu-bar-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.48);
+  --menu-control-hover: rgba(255, 255, 255, 0.1);
+  --menu-control-active: rgba(255, 255, 255, 0.16);
+  --menu-popover-surface: rgba(18, 24, 30, 0.7);
+  --menu-popover-ink: #f5f5f7;
+  --menu-popover-highlight: rgba(255, 255, 255, 0.1);
+  --menu-popover-edge: rgba(255, 255, 255, 0.24);
+  --menu-popover-filter: blur(34px) saturate(155%) brightness(0.95);
+  --menu-popover-shadow: 0 28px 72px rgba(0, 6, 12, 0.48), 0 3px 16px rgba(0, 6, 12, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.14), inset 0 0 0 0.5px rgba(255, 255, 255, 0.07);
+  --menu-separator: rgba(255, 255, 255, 0.12);
   --line: rgba(255, 255, 255, 0.19);
   --line-subtle: rgba(255, 255, 255, 0.1);
   --control-hover: rgba(255, 255, 255, 0.11);
@@ -279,8 +304,13 @@ a:focus-visible,
   --panel: rgba(240, 251, 245, 0.51);
   --panel-strong: rgba(247, 253, 249, 0.78);
   --bar: rgba(238, 251, 244, 0.38);
-  --menu-bar-surface: rgba(238, 251, 244, 0.18);
-  --menu-bar-filter: blur(12px) saturate(150%);
+  --menu-bar-surface: rgba(248, 250, 253, 0.03);
+  --menu-bar-highlight: rgba(255, 255, 255, 0.06);
+  --menu-bar-filter: blur(8px) saturate(175%);
+  --menu-control-hover: rgba(255, 255, 255, 0.14);
+  --menu-control-active: rgba(255, 255, 255, 0.22);
+  --menu-popover-surface: rgba(246, 248, 252, 0.56);
+  --menu-popover-filter: blur(38px) saturate(185%) brightness(1.04);
   --card: rgba(255, 255, 255, 0.2);
   --glass-filter: blur(24px) saturate(172%);
   --glass-filter-soft: blur(18px) saturate(165%);
@@ -290,7 +320,9 @@ a:focus-visible,
   --panel: rgba(10, 35, 27, 0.52);
   --panel-strong: rgba(11, 29, 23, 0.78);
   --bar: rgba(8, 31, 24, 0.4);
-  --menu-bar-surface: rgba(8, 31, 24, 0.22);
+  --menu-bar-surface: rgba(8, 12, 17, 0.05);
+  --menu-popover-surface: rgba(18, 24, 30, 0.56);
+  --menu-popover-filter: blur(38px) saturate(165%) brightness(0.93);
   --card: rgba(255, 255, 255, 0.055);
 }
 
@@ -298,8 +330,12 @@ a:focus-visible,
   --panel: rgba(248, 252, 249, 0.96);
   --panel-strong: rgba(251, 253, 252, 0.99);
   --bar: rgba(246, 251, 248, 0.94);
-  --menu-bar-surface: rgba(246, 251, 248, 0.9);
+  --menu-bar-surface: rgba(248, 250, 252, 0.9);
+  --menu-bar-highlight: rgba(255, 255, 255, 0.18);
   --menu-bar-filter: blur(8px) saturate(108%);
+  --menu-popover-surface: rgba(249, 250, 252, 0.97);
+  --menu-popover-highlight: rgba(255, 255, 255, 0.34);
+  --menu-popover-filter: blur(12px) saturate(112%);
   --card: rgba(255, 255, 255, 0.78);
   --glass-filter: blur(10px) saturate(110%);
   --glass-filter-soft: blur(8px) saturate(108%);
@@ -309,7 +345,10 @@ a:focus-visible,
   --panel: rgba(15, 30, 25, 0.97);
   --panel-strong: rgba(12, 25, 21, 0.99);
   --bar: rgba(11, 27, 22, 0.96);
-  --menu-bar-surface: rgba(11, 27, 22, 0.92);
+  --menu-bar-surface: rgba(12, 17, 22, 0.92);
+  --menu-popover-surface: rgba(16, 22, 27, 0.97);
+  --menu-popover-highlight: rgba(255, 255, 255, 0.08);
+  --menu-popover-filter: blur(12px) saturate(108%);
   --card: rgba(255, 255, 255, 0.095);
 }
 
@@ -411,14 +450,15 @@ a:focus-visible,
   justify-content: space-between;
   gap: 12px;
   padding: env(safe-area-inset-top) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
-  color: var(--ink);
+  color: var(--menu-popover-ink);
   background:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.13), transparent 76%),
+    linear-gradient(to bottom, var(--menu-bar-highlight), transparent 82%),
     var(--menu-bar-surface);
-  border-bottom: 1px solid var(--line);
-  box-shadow: 0 1px 10px rgba(3, 36, 25, 0.05), inset 0 1px rgba(255, 255, 255, 0.16);
+  border-bottom: 1px solid var(--menu-bar-edge);
+  box-shadow: 0 1px 12px rgba(3, 18, 28, 0.06), inset 0 1px rgba(255, 255, 255, 0.12);
   -webkit-backdrop-filter: var(--menu-bar-filter);
   backdrop-filter: var(--menu-bar-filter);
+  text-shadow: var(--menu-bar-text-shadow);
   font-size: 0.8125rem;
 }
 
@@ -427,8 +467,7 @@ a:focus-visible,
   position: absolute;
   z-index: 0;
   inset: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
-  background: linear-gradient(108deg, transparent 18%, rgba(255, 255, 255, 0.08) 48%, transparent 72%);
+  background: linear-gradient(108deg, transparent 18%, rgba(255, 255, 255, 0.045) 48%, transparent 74%);
   pointer-events: none;
 }
 
@@ -465,8 +504,13 @@ a:focus-visible,
 }
 
 .menu-bar button:hover,
+.menu-bar button:focus-visible {
+  background: var(--menu-control-hover);
+}
+
 .menu-bar button[aria-expanded="true"] {
-  background: var(--control-hover);
+  background: var(--menu-control-active);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.12);
 }
 
 .menu-bar button:active {
@@ -486,9 +530,9 @@ a:focus-visible,
 .menu-bar .monogram {
   width: 28px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
   font-weight: var(--weight-bold);
   letter-spacing: 0;
 }
@@ -513,17 +557,20 @@ a:focus-visible,
 .menu-popover {
   position: absolute;
   z-index: 2400;
-  top: calc(var(--menu-height) + 5px);
-  width: min(14.5rem, calc(100vw - 16px));
-  padding: 6px;
+  top: calc(var(--menu-height) + 6px);
+  width: min(15.5rem, calc(100vw - 16px));
+  padding: 8px;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  color: var(--ink);
-  background: var(--panel-strong);
-  box-shadow: var(--floating-shadow);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
+  isolation: isolate;
+  border: 1px solid var(--menu-popover-edge);
+  border-radius: 18px;
+  color: var(--menu-popover-ink);
+  background:
+    linear-gradient(180deg, var(--menu-popover-highlight), transparent 45%),
+    var(--menu-popover-surface);
+  box-shadow: var(--menu-popover-shadow);
+  -webkit-backdrop-filter: var(--menu-popover-filter);
+  backdrop-filter: var(--menu-popover-filter);
   animation: popover-in 180ms cubic-bezier(0.2, 0.78, 0.2, 1);
 }
 
@@ -534,28 +581,41 @@ a:focus-visible,
 
 .menu-popover button {
   width: 100%;
-  min-height: 35px;
+  min-height: 34px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 0 10px;
+  padding: 0 11px;
   border: 0;
-  border-radius: 9px;
+  border-radius: 8px;
   color: inherit;
   background: transparent;
   text-align: left;
   cursor: pointer;
+  transition: color 70ms ease, background-color 70ms ease, box-shadow 70ms ease;
+}
+
+.menu-entry {
+  display: block;
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 5px 10px;
+  background: var(--menu-separator);
+  box-shadow: 0 1px rgba(255, 255, 255, 0.24);
 }
 
 .menu-popover button:hover,
 .menu-popover button:focus-visible {
   color: #fff;
-  background: #197055;
+  background: var(--menu-selection);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.24), 0 1px 4px rgba(0, 74, 173, 0.28);
 }
 
 .menu-popover button:disabled {
-  opacity: 0.42;
+  opacity: 0.36;
   pointer-events: none;
 }
 
@@ -2660,7 +2720,17 @@ a:focus-visible,
     --panel-strong: #fff;
     --bar: rgba(250, 253, 251, 0.98);
     --menu-bar-surface: rgba(250, 253, 251, 0.98);
+    --menu-bar-highlight: transparent;
+    --menu-bar-edge: rgba(4, 35, 24, 0.74);
     --menu-bar-filter: none;
+    --menu-bar-text-shadow: none;
+    --menu-popover-surface: #fff;
+    --menu-popover-highlight: transparent;
+    --menu-popover-edge: rgba(4, 35, 24, 0.74);
+    --menu-popover-filter: none;
+    --menu-popover-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    --menu-separator: rgba(4, 35, 24, 0.42);
+    --menu-selection: #0057b8;
     --line: rgba(4, 35, 24, 0.74);
     --line-subtle: rgba(4, 35, 24, 0.36);
     --card: rgba(255, 255, 255, 0.92);
@@ -2676,6 +2746,10 @@ a:focus-visible,
     --panel-strong: #06130f;
     --bar: rgba(5, 17, 13, 0.99);
     --menu-bar-surface: rgba(5, 17, 13, 0.99);
+    --menu-bar-edge: rgba(255, 255, 255, 0.82);
+    --menu-popover-surface: #06130f;
+    --menu-popover-edge: rgba(255, 255, 255, 0.82);
+    --menu-separator: rgba(255, 255, 255, 0.48);
     --line: rgba(255, 255, 255, 0.82);
     --line-subtle: rgba(255, 255, 255, 0.42);
     --card: rgba(255, 255, 255, 0.13);
@@ -2713,6 +2787,19 @@ a:focus-visible,
     forced-color-adjust: auto;
     background: Canvas;
     color: CanvasText;
+  }
+
+  .menu-bar,
+  .menu-popover {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+    text-shadow: none;
+  }
+
+  .menu-separator {
+    background: CanvasText;
+    box-shadow: none;
   }
 
   .app-tile,

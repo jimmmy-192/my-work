@@ -55,6 +55,7 @@ interface MenuItem {
   action: () => void;
   shortcut?: string;
   disabled?: boolean;
+  separatorBefore?: boolean;
 }
 
 interface DockRestingItem {
@@ -794,7 +795,7 @@ export function PortfolioOS() {
   const menus: Record<MenuId, MenuItem[]> = {
         myos: [
           { label: "关于 MyOS", action: () => openApp("about") },
-          { label: "系统设置…", action: () => openApp("settings") },
+          { label: "系统设置…", action: () => openApp("settings"), separatorBefore: true },
         ],
         go: [
           { label: "欢迎", action: () => openApp("welcome") },
@@ -826,6 +827,7 @@ export function PortfolioOS() {
               if (state.activeWindowId) toggleMaximize(state.activeWindowId);
             },
             disabled: !activeWindow,
+            separatorBefore: true,
           },
           {
             label: "窗口居中",
@@ -937,18 +939,20 @@ export function PortfolioOS() {
           onKeyDown={handleMenuKeyDown}
         >
           {menuItems.map((item) => (
-            <button
-              key={item.label}
-              role="menuitem"
-              disabled={item.disabled}
-              onClick={() => {
-                closeMenuAndRestoreFocus();
-                item.action();
-              }}
-            >
-              <span>{item.label}</span>
-              {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
-            </button>
+            <div className="menu-entry" role="none" key={item.label}>
+              {item.separatorBefore ? <div className="menu-separator" role="separator" /> : null}
+              <button
+                role="menuitem"
+                disabled={item.disabled}
+                onClick={() => {
+                  closeMenuAndRestoreFocus();
+                  item.action();
+                }}
+              >
+                <span>{item.label}</span>
+                {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
+              </button>
+            </div>
           ))}
         </div>
       ) : null}
