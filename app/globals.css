@@ -536,6 +536,7 @@ a:focus-visible,
 }
 
 .menu-left {
+  gap: 8px;
   overflow: hidden;
 }
 
