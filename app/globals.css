@@ -82,6 +82,11 @@ a:focus-visible,
 
 .os-shell {
   --menu-height: calc(34px + env(safe-area-inset-top));
+  /* AppKit standard title bar: 28pt high, 14pt lights, 20pt center spacing. */
+  --window-titlebar-height: 28px;
+  --traffic-control-width: 20px;
+  --traffic-light-size: 14px;
+  --traffic-titlebar-inset: 4px;
   --ink: #10271f;
   --muted: #536b62;
   --soft-ink: #72867f;
@@ -2901,7 +2906,9 @@ a:focus-visible,
 }
 
 .window-titlebar {
+  flex-basis: var(--window-titlebar-height);
   grid-template-columns: minmax(96px, 1fr) auto minmax(96px, 1fr);
+  padding-inline: var(--traffic-titlebar-inset);
 }
 
 .traffic-lights {
@@ -2910,8 +2917,8 @@ a:focus-visible,
 
 .traffic,
 .os-window:not(.is-active) .traffic {
-  width: 28px;
-  height: 28px;
+  width: var(--traffic-control-width);
+  height: var(--window-titlebar-height);
   display: grid;
   place-items: center;
   padding: 0;
@@ -2924,9 +2931,9 @@ a:focus-visible,
 .traffic::before {
   content: "";
   grid-area: 1 / 1;
-  width: 12px;
-  height: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.14);
+  width: var(--traffic-light-size);
+  height: var(--traffic-light-size);
+  border: 1px solid rgba(0, 0, 0, 0.18);
   border-radius: 50%;
   background: var(--traffic-color);
   box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.34);
@@ -2968,19 +2975,19 @@ a:focus-visible,
 }
 
 .traffic.close {
-  --traffic-color: #ff6159;
+  --traffic-color: #ff5f57;
   --traffic-symbol: rgba(92, 8, 5, 0.72);
   background: transparent;
 }
 
 .traffic.minimize {
-  --traffic-color: #ffbd42;
+  --traffic-color: #febc2e;
   --traffic-symbol: rgba(93, 59, 0, 0.72);
   background: transparent;
 }
 
 .traffic.maximize {
-  --traffic-color: #2bc94b;
+  --traffic-color: #28c840;
   --traffic-symbol: rgba(2, 75, 23, 0.76);
   background: transparent;
 }
