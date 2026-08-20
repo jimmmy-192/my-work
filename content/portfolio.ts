@@ -191,7 +191,7 @@ export const appDefinitions: AppDefinition[] = [
     title: "设置",
     accent: "#657585",
     desktop: false,
-    dock: true,
+    dock: false,
     description: "调整桌面背景、主题与玻璃效果",
     defaultBounds: { x: 330, y: 84, width: 760, height: 610 },
     minSize: { width: 560, height: 480 },
