@@ -1,8 +1,8 @@
 export const WALLPAPER_OPTIONS = [
   {
     value: "mountain",
-    label: "雪山微光",
-    description: "Matthew Stephenson 摄影",
+    label: "湖山晨光",
+    description: "Gábor Kőszegi 摄影",
   },
   { value: "aurora", label: "青岚晨雾", description: "柔和绿意与清晨光线" },
   { value: "iris", label: "鸢尾暮光", description: "粉紫色的安静暮光" },
