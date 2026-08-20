@@ -964,19 +964,6 @@ export function PortfolioOS() {
         }}
       >
         {!isMobile ? (
-          <div className="desktop-icons" aria-label="桌面快捷方式">
-            {appDefinitions.filter((app) => app.desktop && app.id !== "welcome").map((app) => (
-              <button className="desktop-shortcut" key={app.id} onClick={() => openApp(app.id)}>
-                <span className="app-tile" style={appStyle(app.accent)} aria-hidden="true">
-                  <AppIcon appId={app.id} />
-                </span>
-                <span>{app.title}</span>
-              </button>
-            ))}
-          </div>
-        ) : null}
-
-        {!isMobile ? (
           <div className="window-layer" ref={windowLayerRef} aria-live="polite">
             {state.stack.map((appId, stackIndex) => {
               const windowState = state.windows[appId];

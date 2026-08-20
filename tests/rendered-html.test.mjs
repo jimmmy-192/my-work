@@ -40,6 +40,7 @@ test("server-renders the MyOS portfolio shell", async () => {
   assert.match(html, /关于我/);
   assert.match(html, /实验室/);
   assert.match(html, /联系我/);
+  assert.doesNotMatch(html, /桌面快捷方式/);
   assert.doesNotMatch(html, /单击打开 · 拖动窗口 · ⌘K 搜索/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Building your site/i);
 });

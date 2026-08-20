@@ -91,6 +91,8 @@ a:focus-visible,
   --panel-strong: rgba(249, 253, 250, 0.93);
   --panel-soft: rgba(255, 255, 255, 0.29);
   --bar: rgba(238, 250, 243, 0.5);
+  --menu-bar-surface: rgba(238, 250, 243, 0.28);
+  --menu-bar-filter: blur(16px) saturate(140%);
   --line: rgba(255, 255, 255, 0.66);
   --line-subtle: rgba(20, 67, 50, 0.12);
   --control-hover: rgba(255, 255, 255, 0.38);
@@ -132,6 +134,7 @@ a:focus-visible,
   --panel-strong: rgba(13, 29, 24, 0.94);
   --panel-soft: rgba(255, 255, 255, 0.07);
   --bar: rgba(10, 34, 27, 0.56);
+  --menu-bar-surface: rgba(10, 34, 27, 0.34);
   --line: rgba(255, 255, 255, 0.19);
   --line-subtle: rgba(255, 255, 255, 0.1);
   --control-hover: rgba(255, 255, 255, 0.11);
@@ -276,6 +279,8 @@ a:focus-visible,
   --panel: rgba(240, 251, 245, 0.51);
   --panel-strong: rgba(247, 253, 249, 0.78);
   --bar: rgba(238, 251, 244, 0.38);
+  --menu-bar-surface: rgba(238, 251, 244, 0.18);
+  --menu-bar-filter: blur(12px) saturate(150%);
   --card: rgba(255, 255, 255, 0.2);
   --glass-filter: blur(24px) saturate(172%);
   --glass-filter-soft: blur(18px) saturate(165%);
@@ -285,6 +290,7 @@ a:focus-visible,
   --panel: rgba(10, 35, 27, 0.52);
   --panel-strong: rgba(11, 29, 23, 0.78);
   --bar: rgba(8, 31, 24, 0.4);
+  --menu-bar-surface: rgba(8, 31, 24, 0.22);
   --card: rgba(255, 255, 255, 0.055);
 }
 
@@ -292,6 +298,8 @@ a:focus-visible,
   --panel: rgba(248, 252, 249, 0.96);
   --panel-strong: rgba(251, 253, 252, 0.99);
   --bar: rgba(246, 251, 248, 0.94);
+  --menu-bar-surface: rgba(246, 251, 248, 0.9);
+  --menu-bar-filter: blur(8px) saturate(108%);
   --card: rgba(255, 255, 255, 0.78);
   --glass-filter: blur(10px) saturate(110%);
   --glass-filter-soft: blur(8px) saturate(108%);
@@ -301,6 +309,7 @@ a:focus-visible,
   --panel: rgba(15, 30, 25, 0.97);
   --panel-strong: rgba(12, 25, 21, 0.99);
   --bar: rgba(11, 27, 22, 0.96);
+  --menu-bar-surface: rgba(11, 27, 22, 0.92);
   --card: rgba(255, 255, 255, 0.095);
 }
 
@@ -404,12 +413,12 @@ a:focus-visible,
   padding: env(safe-area-inset-top) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
   color: var(--ink);
   background:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.2), transparent 76%),
-    var(--bar);
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.13), transparent 76%),
+    var(--menu-bar-surface);
   border-bottom: 1px solid var(--line);
-  box-shadow: 0 1px 15px rgba(3, 36, 25, 0.08), inset 0 1px rgba(255, 255, 255, 0.22);
-  -webkit-backdrop-filter: var(--glass-filter-soft);
-  backdrop-filter: var(--glass-filter-soft);
+  box-shadow: 0 1px 10px rgba(3, 36, 25, 0.05), inset 0 1px rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: var(--menu-bar-filter);
+  backdrop-filter: var(--menu-bar-filter);
   font-size: 0.8125rem;
 }
 
@@ -419,7 +428,7 @@ a:focus-visible,
   z-index: 0;
   inset: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.18);
-  background: linear-gradient(108deg, transparent 18%, rgba(255, 255, 255, 0.12) 48%, transparent 72%);
+  background: linear-gradient(108deg, transparent 18%, rgba(255, 255, 255, 0.08) 48%, transparent 72%);
   pointer-events: none;
 }
 
@@ -570,45 +579,6 @@ a:focus-visible,
   min-height: 0;
 }
 
-.desktop-icons {
-  position: absolute;
-  z-index: 20;
-  top: 18px;
-  right: max(16px, env(safe-area-inset-right));
-  display: grid;
-  gap: 2px;
-}
-
-.desktop-shortcut {
-  width: 90px;
-  min-height: 78px;
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 5px;
-  padding: 6px;
-  overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: 14px;
-  color: #f8fff9;
-  background: transparent;
-  text-shadow: 0 1px 6px rgba(0, 25, 17, 0.78);
-  font-size: 0.75rem;
-  font-weight: var(--weight-medium);
-  cursor: pointer;
-  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
-}
-
-.desktop-shortcut:hover,
-.desktop-shortcut:focus-visible {
-  border-color: rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.desktop-shortcut:active {
-  transform: scale(0.96);
-}
-
 .app-tile,
 .search-app-icon {
   display: grid;
@@ -631,7 +601,7 @@ a:focus-visible,
 .window-layer {
   position: absolute;
   z-index: 30;
-  inset: 0 110px 92px 0;
+  inset: 0 0 92px;
   min-width: 0;
   min-height: 0;
   pointer-events: none;
@@ -2689,6 +2659,8 @@ a:focus-visible,
     --panel: rgba(250, 253, 251, 0.98);
     --panel-strong: #fff;
     --bar: rgba(250, 253, 251, 0.98);
+    --menu-bar-surface: rgba(250, 253, 251, 0.98);
+    --menu-bar-filter: none;
     --line: rgba(4, 35, 24, 0.74);
     --line-subtle: rgba(4, 35, 24, 0.36);
     --card: rgba(255, 255, 255, 0.92);
@@ -2703,6 +2675,7 @@ a:focus-visible,
     --panel: rgba(5, 17, 13, 0.99);
     --panel-strong: #06130f;
     --bar: rgba(5, 17, 13, 0.99);
+    --menu-bar-surface: rgba(5, 17, 13, 0.99);
     --line: rgba(255, 255, 255, 0.82);
     --line-subtle: rgba(255, 255, 255, 0.42);
     --card: rgba(255, 255, 255, 0.13);
@@ -2720,10 +2693,6 @@ a:focus-visible,
   .profile-card,
   .setting-option {
     border-width: 2px;
-  }
-
-  .desktop-shortcut {
-    text-shadow: 0 1px 2px #000, 0 0 5px #000;
   }
 
   .running-dot {
@@ -2802,12 +2771,6 @@ a:focus-visible,
   font-size: var(--type-subheadline);
   font-weight: var(--weight-regular);
   line-height: var(--leading-subheadline);
-}
-
-.desktop-shortcut {
-  font-size: var(--type-callout);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-callout);
 }
 
 .app-tile svg,
