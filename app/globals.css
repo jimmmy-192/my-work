@@ -2209,6 +2209,7 @@ a:focus-visible,
   box-shadow: inset 0 1px 7px rgba(255, 255, 255, 0.48), 0 11px 22px rgba(4, 48, 33, 0.25);
 }
 
+.dock-welcome-art,
 .dock-works-art,
 .dock-character-art,
 .dock-contact-art {
@@ -2216,6 +2217,9 @@ a:focus-visible,
 }
 
 @media (min-width: 768px) {
+  .dock-app.dock-app--welcome,
+  .dock-app.dock-app--welcome:hover,
+  .dock-app.dock-app--welcome:focus-visible,
   .dock-app.dock-app--character,
   .dock-app.dock-app--character:hover,
   .dock-app.dock-app--character:focus-visible,
@@ -2230,12 +2234,14 @@ a:focus-visible,
     box-shadow: none;
   }
 
+  .dock-app--welcome .dock-default-icon,
   .dock-app--works .dock-default-icon,
   .dock-app--character .dock-default-icon,
   .dock-app--contact .dock-default-icon {
     display: none;
   }
 
+  .dock-welcome-art,
   .dock-works-art,
   .dock-character-art,
   .dock-contact-art {
@@ -2250,6 +2256,10 @@ a:focus-visible,
 
   .dock-character-art {
     background: url("/icons/about-character.png") center / contain no-repeat;
+  }
+
+  .dock-welcome-art {
+    background: url("/icons/welcome-finder.png") center / contain no-repeat;
   }
 
   .dock-works-art {
