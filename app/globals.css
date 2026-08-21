@@ -214,6 +214,7 @@ a:focus-visible,
 /* Original CSS wallpaper presets --------------------------------------- */
 .os-shell[data-wallpaper="mountain"] {
   --wallpaper-photo: url("/wallpapers/snow-mountain.jpg");
+  --wallpaper-photo-overlay: linear-gradient(180deg, rgba(247, 242, 255, 0.05), rgba(33, 72, 131, 0.08));
   --wallpaper-background:
     linear-gradient(180deg, rgba(247, 242, 255, 0.05), rgba(33, 72, 131, 0.08)),
     var(--wallpaper-photo);
@@ -314,6 +315,7 @@ a:focus-visible,
 }
 
 .os-shell[data-theme="dark"][data-wallpaper="mountain"] {
+  --wallpaper-photo-overlay: linear-gradient(180deg, rgba(9, 13, 32, 0.5), rgba(3, 14, 38, 0.58));
   --wallpaper-background:
     linear-gradient(180deg, rgba(9, 13, 32, 0.5), rgba(3, 14, 38, 0.58)),
     var(--wallpaper-photo);
@@ -331,12 +333,6 @@ a:focus-visible,
   --menu-bar-ink: #fff;
   --menu-control-hover: rgba(0, 0, 0, 0.18);
   --menu-control-active: rgba(0, 0, 0, 0.28);
-}
-
-@media (max-width: 767px) {
-  .os-shell[data-wallpaper="mountain"] {
-    --wallpaper-photo: url("/wallpapers/snow-mountain-mobile.jpg");
-  }
 }
 
 .os-shell[data-glass="clear"] {
@@ -434,6 +430,39 @@ a:focus-visible,
   border-radius: 42% 58% 55% 45%;
   box-shadow: 0 0 0 9vmax var(--wallpaper-ring-middle), 0 0 0 18vmax var(--wallpaper-ring-outer);
   transform: rotate(27deg);
+}
+
+.wallpaper-photo-carousel {
+  position: absolute;
+  z-index: -4;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.wallpaper-photo-carousel::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background: var(--wallpaper-photo-overlay);
+  pointer-events: none;
+}
+
+.wallpaper-photo-slide {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background-position: center 58%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.wallpaper-photo-slide.is-active {
+  z-index: 1;
+  opacity: 1;
 }
 
 .wallpaper-aurora {
@@ -1789,7 +1818,7 @@ a:focus-visible,
 .wallpaper-preview-mountain {
   background:
     linear-gradient(180deg, rgba(246, 238, 255, 0.03), rgba(23, 63, 124, 0.09)),
-    url("/wallpapers/snow-mountain-mobile.jpg") center 58% / cover no-repeat;
+    url("/wallpapers/snow-mountain.jpg") center 58% / cover no-repeat;
 }
 
 .wallpaper-preview-iris {
@@ -2919,6 +2948,10 @@ a:focus-visible,
 
   .dock {
     --dock-shell-expand: 0px !important;
+  }
+
+  .wallpaper-photo-slide {
+    transition: none !important;
   }
 
   .dock-divider {

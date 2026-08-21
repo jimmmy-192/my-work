@@ -30,6 +30,11 @@ import type { WallpaperPreference } from "./preferences";
 import { useLiquidGlass } from "./use-liquid-glass";
 import { formatMenuBarTime } from "./time";
 import {
+  PHOTO_WALLPAPERS,
+  WALLPAPER_SLIDE_INTERVAL_MS,
+  getNextWallpaperSlide,
+} from "./wallpaper-carousel";
+import {
   MIN_HEIGHT,
   MIN_WIDTH,
   clampBounds,
@@ -72,7 +77,6 @@ const THEME_KEY = "myos-theme";
 const GLASS_KEY = "myos-glass";
 const WALLPAPER_KEY = "myos-wallpaper-v2";
 const LEGACY_WALLPAPER_KEY = "myos-wallpaper";
-const MOUNTAIN_WALLPAPER_URL = "/wallpapers/snow-mountain.jpg";
 const MENU_ORDER = ["myos", "go", "window", "help"] as const;
 type MenuId = (typeof MENU_ORDER)[number];
 const MENU_LABELS: Record<MenuId, string> = {
@@ -108,7 +112,9 @@ export function PortfolioOS() {
   const [theme, setTheme] = useState<ThemePreference>("system");
   const [glass, setGlass] = useState<GlassPreference>("standard");
   const [wallpaper, setWallpaper] = useState<WallpaperPreference>("mountain");
-  const [mountainImageReady, setMountainImageReady] = useState(false);
+  const [photoCarouselReady, setPhotoCarouselReady] = useState(false);
+  const [photoSlideIndex, setPhotoSlideIndex] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [systemDark, setSystemDark] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -151,15 +157,27 @@ export function PortfolioOS() {
   const resolvedTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
   const activeAppId = isMobile ? mobileActiveApp : state.activeWindowId;
   const activeApp = activeAppId ? definitions.get(activeAppId) : undefined;
+  const displayedPhotoSlideIndex =
+    wallpaper === "mountain" && !prefersReducedMotion ? photoSlideIndex : 0;
+  const selectWallpaper = useCallback(
+    (nextWallpaper: WallpaperPreference) => {
+      if (nextWallpaper !== wallpaper) {
+        setPhotoSlideIndex(0);
+        if (nextWallpaper === "mountain") setPhotoCarouselReady(false);
+      }
+      setWallpaper(nextWallpaper);
+    },
+    [wallpaper],
+  );
 
   useLiquidGlass({
     rootRef: osShellRef,
     canvasHostRef: liquidCanvasHostRef,
     targetRef: dockLiquidTargetRef,
     preferencesReady:
-      preferencesReady && (wallpaper !== "mountain" || isMobile || mountainImageReady),
+      preferencesReady && (wallpaper !== "mountain" || isMobile || photoCarouselReady),
     glass,
-    sceneKey: `${resolvedTheme}:${glass}:${wallpaper}`,
+    sceneKey: `${resolvedTheme}:${glass}:${wallpaper}:${displayedPhotoSlideIndex}`,
   });
 
   useEffect(() => {
@@ -170,41 +188,51 @@ export function PortfolioOS() {
   }, []);
 
   useEffect(() => {
-    if (wallpaper !== "mountain" || window.matchMedia("(max-width: 767px)").matches) {
-      return;
-    }
+    if (wallpaper !== "mountain") return;
 
     let cancelled = false;
     let frame: number | null = null;
-    let preparing = false;
-    const image = new Image();
-    const prepareImage = () => {
-      if (preparing) return;
-      preparing = true;
-      void image
-        .decode()
-        .catch(() => undefined)
-        .then(() => {
-          if (cancelled) return;
-          frame = window.requestAnimationFrame(() => {
-            frame = window.requestAnimationFrame(() => {
-              if (!cancelled) setMountainImageReady(true);
-            });
-          });
+
+    void Promise.all(
+      PHOTO_WALLPAPERS.map(async ({ url }) => {
+        const image = new Image();
+        image.src = url;
+        await image.decode().catch(() => undefined);
+      }),
+    ).then(() => {
+      if (cancelled) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = window.requestAnimationFrame(() => {
+          if (!cancelled) setPhotoCarouselReady(true);
         });
-    };
-    image.addEventListener("load", prepareImage, { once: true });
-    image.addEventListener("error", prepareImage, { once: true });
-    image.src = MOUNTAIN_WALLPAPER_URL;
-    if (image.complete) prepareImage();
+      });
+    });
 
     return () => {
       cancelled = true;
       if (frame !== null) window.cancelAnimationFrame(frame);
-      image.removeEventListener("load", prepareImage);
-      image.removeEventListener("error", prepareImage);
     };
-  }, [isMobile, wallpaper]);
+  }, [wallpaper]);
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setPrefersReducedMotion(reducedMotion.matches);
+    const frame = window.requestAnimationFrame(update);
+    reducedMotion.addEventListener("change", update);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      reducedMotion.removeEventListener("change", update);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (wallpaper !== "mountain" || !photoCarouselReady || prefersReducedMotion) return;
+
+    const timer = window.setInterval(() => {
+      setPhotoSlideIndex((currentIndex) => getNextWallpaperSlide(currentIndex));
+    }, WALLPAPER_SLIDE_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [photoCarouselReady, prefersReducedMotion, wallpaper]);
 
   const resetDockMagnification = useCallback(() => {
     if (dockAnimationFrameRef.current !== null) {
@@ -936,6 +964,17 @@ export function PortfolioOS() {
       data-wallpaper={wallpaper}
       aria-label="MyOS 个人作品桌面"
     >
+      {wallpaper === "mountain" ? (
+        <div className="wallpaper-photo-carousel" aria-hidden="true">
+          {PHOTO_WALLPAPERS.map((photo, index) => (
+            <span
+              key={photo.id}
+              className={`wallpaper-photo-slide${displayedPhotoSlideIndex === index ? " is-active" : ""}`}
+              style={{ backgroundImage: `url("${photo.url}")` }}
+            />
+          ))}
+        </div>
+      ) : null}
       <div className="wallpaper-aurora wallpaper-aurora-one" aria-hidden="true" />
       <div className="wallpaper-aurora wallpaper-aurora-two" aria-hidden="true" />
       <div className="wallpaper-grain" aria-hidden="true" />
@@ -1109,7 +1148,7 @@ export function PortfolioOS() {
                       glass={glass}
                       setGlass={setGlass}
                       wallpaper={wallpaper}
-                      setWallpaper={setWallpaper}
+                      setWallpaper={selectWallpaper}
                     />
                   </div>
                   {windowState.status === "normal"
@@ -1148,7 +1187,7 @@ export function PortfolioOS() {
                 glass={glass}
                 setGlass={setGlass}
                 wallpaper={wallpaper}
-                setWallpaper={setWallpaper}
+                setWallpaper={selectWallpaper}
               />
             </div>
           </section>
