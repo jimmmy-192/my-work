@@ -2245,16 +2245,20 @@ a:focus-visible,
   .dock-works-art,
   .dock-character-art,
   .dock-contact-art {
+    --dock-art-optical-scale: 1;
     width: 48px;
     height: 48px;
     display: block;
     place-self: center;
     filter: drop-shadow(0 2px 2px rgba(3, 20, 14, 0.2));
+    transform: scale(var(--dock-art-optical-scale));
+    transform-origin: center;
     pointer-events: none;
     user-select: none;
   }
 
   .dock-character-art {
+    --dock-art-optical-scale: 1.1;
     background: url("/icons/about-character.png") center / contain no-repeat;
   }
 
@@ -2263,10 +2267,12 @@ a:focus-visible,
   }
 
   .dock-works-art {
+    --dock-art-optical-scale: 0.88;
     background: url("/icons/works-folder.png") center / contain no-repeat;
   }
 
   .dock-contact-art {
+    --dock-art-optical-scale: 0.95;
     background: url("/icons/contact-bubble.png") center / contain no-repeat;
   }
 }
@@ -2441,6 +2447,8 @@ a:focus-visible,
     place-self: center;
     background: url("/icons/trash-wireframes.png") center / contain no-repeat;
     filter: drop-shadow(0 2px 2px rgba(3, 20, 14, 0.22));
+    transform: scale(0.98);
+    transform-origin: center;
     pointer-events: none;
     user-select: none;
   }
