@@ -17,7 +17,6 @@ import {
   Move,
   Search,
   Settings2,
-  SunMoon,
   Trash2,
   UserRound,
   X,
@@ -36,7 +35,6 @@ const APP_ICONS: Record<AppId, LucideIcon> = {
 };
 
 const SYSTEM_ICONS = {
-  appearance: SunMoon,
   search: Search,
   arrowRight: ArrowRight,
   externalLink: ExternalLink,

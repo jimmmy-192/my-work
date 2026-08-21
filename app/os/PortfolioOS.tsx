@@ -990,13 +990,6 @@ export function PortfolioOS() {
         </div>
         <div className="menu-right">
           <button
-            className="status-button theme-toggle"
-            aria-label={`切换外观，当前为${resolvedTheme === "dark" ? "深色" : "浅色"}`}
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          >
-            <SystemIcon name="appearance" size={15} />
-          </button>
-          <button
             className="status-button"
             aria-label="快速打开应用"
             onClick={openSearch}
