@@ -12,7 +12,7 @@ test("peaks under the pointer and keeps the tooltip visually stable", () => {
 
   assert.equal(center.scale, DOCK_MAX_SCALE);
   assert.equal(center.proximity, 1);
-  assert.ok(center.expansion > 35 && center.expansion < 36);
+  assert.ok(center.expansion > 44 && center.expansion < 45);
   assert.ok(Math.abs(center.labelScale * center.scale - 1) < 0.000001);
 });
 

@@ -2856,7 +2856,7 @@ a:focus-visible,
   }
 
   .dock {
-    bottom: 7px;
+    bottom: 12px;
     transform: translateX(-50%) scale(0.88);
     transform-origin: 50% 100%;
   }
