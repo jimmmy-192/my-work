@@ -171,7 +171,7 @@ export const appDefinitions: AppDefinition[] = [
     title: "实验室",
     accent: "#bd62df",
     desktop: true,
-    dock: true,
+    dock: false,
     description: "没有客户需求的小型创作实验",
     defaultBounds: { x: 318, y: 86, width: 820, height: 600 },
     minSize: { width: 560, height: 420 },
