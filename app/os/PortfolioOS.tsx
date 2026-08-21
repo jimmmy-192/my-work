@@ -117,8 +117,6 @@ export function PortfolioOS() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [systemDark, setSystemDark] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [mobileActiveApp, setMobileActiveApp] = useState<AppId | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchActiveIndex, setSearchActiveIndex] = useState(0);
   const [menuLeft, setMenuLeft] = useState(8);
@@ -140,11 +138,6 @@ export function PortfolioOS() {
   const windowRefs = useRef<Partial<Record<AppId, HTMLElement>>>({});
   const dockAppRefs = useRef<Partial<Record<AppId, HTMLButtonElement>>>({});
   const minimizedWindowRefs = useRef<Partial<Record<AppId, HTMLButtonElement>>>({});
-  const mobileBackButtonRef = useRef<HTMLButtonElement>(null);
-  const launcherAppRefs = useRef<Partial<Record<AppId, HTMLButtonElement>>>({});
-  const mobileReturnFocusRef = useRef<HTMLElement | null>(null);
-  const mobileReturnAppIdRef = useRef<AppId | null>(null);
-  const previousMobileAppRef = useRef<AppId | null>(null);
   const gestureRef = useRef<PointerGesture | null>(null);
   const dockPointerXRef = useRef<number | null>(null);
   const dockAnimationFrameRef = useRef<number | null>(null);
@@ -155,7 +148,7 @@ export function PortfolioOS() {
     [],
   );
   const resolvedTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
-  const activeAppId = isMobile ? mobileActiveApp : state.activeWindowId;
+  const activeAppId = state.activeWindowId;
   const activeApp = activeAppId ? definitions.get(activeAppId) : undefined;
   const displayedPhotoSlideIndex =
     wallpaper === "mountain" && !prefersReducedMotion ? photoSlideIndex : 0;
@@ -174,8 +167,7 @@ export function PortfolioOS() {
     rootRef: osShellRef,
     canvasHostRef: liquidCanvasHostRef,
     targetRef: dockLiquidTargetRef,
-    preferencesReady:
-      preferencesReady && (wallpaper !== "mountain" || isMobile || photoCarouselReady),
+    preferencesReady: preferencesReady && (wallpaper !== "mountain" || photoCarouselReady),
     glass,
     sceneKey: `${resolvedTheme}:${glass}:${wallpaper}:${displayedPhotoSlideIndex}`,
   });
@@ -382,21 +374,11 @@ export function PortfolioOS() {
 
   useEffect(() => {
     const colorQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const mobileQuery = window.matchMedia("(max-width: 767px)");
     const syncColor = () => setSystemDark(colorQuery.matches);
-    const syncMobile = () => {
-      setIsMobile((current) => {
-        if (current !== mobileQuery.matches) setMobileActiveApp(null);
-        return mobileQuery.matches;
-      });
-    };
     syncColor();
-    syncMobile();
     colorQuery.addEventListener("change", syncColor);
-    mobileQuery.addEventListener("change", syncMobile);
     return () => {
       colorQuery.removeEventListener("change", syncColor);
-      mobileQuery.removeEventListener("change", syncMobile);
     };
   }, []);
 
@@ -415,7 +397,7 @@ export function PortfolioOS() {
       observer.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [isMobile]);
+  }, []);
 
   useEffect(() => {
     const layer = windowLayerRef.current;
@@ -431,7 +413,7 @@ export function PortfolioOS() {
     };
     layer.addEventListener("pointerdown", focusWindowFromPointer);
     return () => layer.removeEventListener("pointerdown", focusWindowFromPointer);
-  }, [definitions, isMobile]);
+  }, [definitions]);
 
   useEffect(() => {
     if (state.searchOpen) {
@@ -479,26 +461,6 @@ export function PortfolioOS() {
     document.addEventListener("pointerdown", closeFromOutside, true);
     return () => document.removeEventListener("pointerdown", closeFromOutside, true);
   }, [state.activeMenu]);
-
-  useEffect(() => {
-    const previousApp = previousMobileAppRef.current;
-    previousMobileAppRef.current = mobileActiveApp;
-    if (!isMobile) return;
-
-    const timer = window.setTimeout(() => {
-      if (mobileActiveApp) {
-        mobileBackButtonRef.current?.focus();
-      } else if (previousApp) {
-        const appId = mobileReturnAppIdRef.current ?? previousApp;
-        const originalTarget = mobileReturnFocusRef.current;
-        if (originalTarget?.isConnected) originalTarget.focus();
-        else if (launcherAppRefs.current[appId]) launcherAppRefs.current[appId]?.focus();
-        else if (dockAppRefs.current[appId]) dockAppRefs.current[appId]?.focus();
-        else menuTriggerRefs.current.myos?.focus();
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [isMobile, mobileActiveApp]);
 
   const openSearch = useCallback(() => {
     const activeElement = document.activeElement;
@@ -548,57 +510,39 @@ export function PortfolioOS() {
         definition.minSize,
       );
       dispatch({ type: "OPEN_APP", appId, bounds: requested });
-      if (isMobile) {
-        const activeElement = document.activeElement;
-        mobileReturnFocusRef.current = activeElement instanceof HTMLElement ? activeElement : null;
-        mobileReturnAppIdRef.current = appId;
-        setMobileActiveApp(appId);
-      }
-      else {
-        window.setTimeout(() => windowRefs.current[appId]?.focus(), 0);
-      }
+      window.setTimeout(() => windowRefs.current[appId]?.focus(), 0);
     },
-    [definitions, isMobile, state.stack.length, workspace],
+    [definitions, state.stack.length, workspace],
   );
 
   const minimizeApp = useCallback(
     (appId: AppId) => {
       dispatch({ type: "MINIMIZE_WINDOW", appId });
-      if (isMobile) setMobileActiveApp(null);
-      else {
-        window.setTimeout(() => {
-          const nextWindow = document.querySelector<HTMLElement>(
-            ".os-window.is-active .window-title-control",
-          );
-          if (nextWindow) nextWindow.focus();
-          else minimizedWindowRefs.current[appId]?.focus();
-        }, 0);
-      }
+      window.setTimeout(() => {
+        const nextWindow = document.querySelector<HTMLElement>(
+          ".os-window.is-active .window-title-control",
+        );
+        if (nextWindow) nextWindow.focus();
+        else minimizedWindowRefs.current[appId]?.focus();
+      }, 0);
     },
-    [isMobile],
+    [],
   );
 
   const closeApp = useCallback(
     (appId: AppId) => {
       dispatch({ type: "CLOSE_WINDOW", appId });
-      if (isMobile) setMobileActiveApp(null);
-      else {
-        window.setTimeout(() => {
-          const nextWindow = document.querySelector<HTMLElement>(
-            ".os-window.is-active .window-title-control",
-          );
-          if (nextWindow) nextWindow.focus();
-          else if (dockAppRefs.current[appId]) dockAppRefs.current[appId]?.focus();
-          else menuTriggerRefs.current.myos?.focus();
-        }, 0);
-      }
+      window.setTimeout(() => {
+        const nextWindow = document.querySelector<HTMLElement>(
+          ".os-window.is-active .window-title-control",
+        );
+        if (nextWindow) nextWindow.focus();
+        else if (dockAppRefs.current[appId]) dockAppRefs.current[appId]?.focus();
+        else menuTriggerRefs.current.myos?.focus();
+      }, 0);
     },
-    [isMobile],
+    [],
   );
-
-  const returnToMobileDesktop = useCallback(() => {
-    setMobileActiveApp(null);
-  }, []);
 
   const toggleMaximize = useCallback(
     (appId: AppId) => dispatch({ type: "TOGGLE_MAXIMIZE", appId, workspace }),
@@ -668,7 +612,7 @@ export function PortfolioOS() {
     mode: "move" | "resize",
     edge?: ResizeEdge,
   ) => {
-    if (isMobile || windowState.status !== "normal") return;
+    if (windowState.status !== "normal") return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     const fitted = clampBounds(
@@ -1085,8 +1029,7 @@ export function PortfolioOS() {
           }
         }}
       >
-        {!isMobile ? (
-          <div className="window-layer" ref={windowLayerRef} aria-live="polite">
+        <div className="window-layer" ref={windowLayerRef} aria-live="polite">
             {state.stack.map((appId, stackIndex) => {
               const windowState = state.windows[appId];
               const definition = definitions.get(appId);
@@ -1167,55 +1110,7 @@ export function PortfolioOS() {
                 </section>
               );
             })}
-          </div>
-        ) : mobileActiveApp ? (
-          <section className="mobile-app-panel" aria-labelledby={`mobile-title-${mobileActiveApp}`}>
-            <header className="mobile-app-titlebar">
-              <button ref={mobileBackButtonRef} className="mobile-back-button" aria-label="返回桌面" onClick={returnToMobileDesktop}>
-                <SystemIcon name="back" size={20} />
-                <span>桌面</span>
-              </button>
-              <strong id={`mobile-title-${mobileActiveApp}`}>{definitions.get(mobileActiveApp)?.title}</strong>
-              <span aria-hidden="true" />
-            </header>
-            <div className="mobile-app-content">
-              <AppContent
-                appId={mobileActiveApp}
-                openApp={openApp}
-                theme={theme}
-                setTheme={setTheme}
-                glass={glass}
-                setGlass={setGlass}
-                wallpaper={wallpaper}
-                setWallpaper={selectWallpaper}
-              />
-            </div>
-          </section>
-        ) : (
-          <section className="mobile-launcher" aria-labelledby="launcher-title">
-            <div className="launcher-intro">
-              <span>MYOS · PORTFOLIO</span>
-              <h1 id="launcher-title">你好，我是<br />{portfolioContent.ownerName}。</h1>
-              <p>选择一个应用，进入我的作品与想法。</p>
-            </div>
-            <div className="launcher-grid">
-              {appDefinitions.filter((app) => app.id !== "trash").map((app) => (
-                <button
-                  key={app.id}
-                  ref={(element) => {
-                    if (element) launcherAppRefs.current[app.id] = element;
-                  }}
-                  onClick={() => openApp(app.id)}
-                >
-                  <span className="app-tile" style={appStyle(app.accent)} aria-hidden="true">
-                    <AppIcon appId={app.id} size={30} />
-                  </span>
-                  <strong>{app.title}</strong>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
+        </div>
       </section>
 
       {state.searchOpen ? (
@@ -1290,7 +1185,7 @@ export function PortfolioOS() {
 
       <nav
         ref={dockRef}
-        className={`dock${isMobile && mobileActiveApp ? " is-mobile-hidden" : ""}`}
+        className="dock"
         data-liquid-ignore=""
         aria-label="应用程序 Dock"
         onPointerMove={handleDockPointerMove}

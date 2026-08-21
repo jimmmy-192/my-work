@@ -2,7 +2,7 @@ export const WALLPAPER_OPTIONS = [
   {
     value: "mountain",
     label: "湖山与庭院",
-    description: "两张摄影作品，每 20 秒切换",
+    description: "两张摄影作品，每 2 分钟切换",
   },
   { value: "aurora", label: "青岚晨雾", description: "柔和绿意与清晨光线" },
   { value: "iris", label: "鸢尾暮光", description: "粉紫色的安静暮光" },

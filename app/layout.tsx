@@ -1,9 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 
 const title = "MyOS · 你的个人作品桌面";
 const description = "一个以 Liquid Glass 为灵感的个人作品网站。";
+
+export const viewport: Viewport = {
+  width: 1024,
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const incomingHeaders = await headers();

@@ -8,11 +8,11 @@ import {
   getNextWallpaperSlide,
 } from "../app/os/wallpaper-carousel.ts";
 
-test("rotates two photo wallpapers every twenty seconds", () => {
-  assert.equal(WALLPAPER_SLIDE_INTERVAL_MS, 20_000);
+test("rotates two photo wallpapers every two minutes", () => {
+  assert.equal(WALLPAPER_SLIDE_INTERVAL_MS, 120_000);
   assert.deepEqual(
     PHOTO_WALLPAPERS.map((photo) => photo.url),
-    ["/wallpapers/snow-mountain.jpg", "/wallpapers/garden-canopy.jpg"],
+    ["/wallpapers/snow-mountain.jpg", "/wallpapers/garden-canopy-upright.jpg"],
   );
   assert.equal(getNextWallpaperSlide(0), 1);
   assert.equal(getNextWallpaperSlide(1), 0);

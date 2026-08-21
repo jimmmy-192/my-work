@@ -911,14 +911,12 @@ a:focus-visible,
 }
 
 .window-content::-webkit-scrollbar,
-.mobile-app-content::-webkit-scrollbar,
 .spotlight-results::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .window-content::-webkit-scrollbar-thumb,
-.mobile-app-content::-webkit-scrollbar-thumb,
 .spotlight-results::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 99px;
@@ -2241,8 +2239,7 @@ a:focus-visible,
   display: none;
 }
 
-@media (min-width: 768px) {
-  .dock-app.dock-app--welcome,
+.dock-app.dock-app--welcome,
   .dock-app.dock-app--welcome:hover,
   .dock-app.dock-app--welcome:focus-visible,
   .dock-app.dock-app--character,
@@ -2300,14 +2297,13 @@ a:focus-visible,
     --dock-art-optical-scale: 0.95;
     background: url("/icons/contact-bubble.png") center / contain no-repeat;
   }
-}
 
 .dock-app:active,
 .minimized-window:active {
   transform: translateX(var(--dock-shift)) translateY(2px) scale(var(--dock-scale));
 }
 
-@media (min-width: 768px) and (hover: hover) {
+@media (hover: hover) {
   .dock:not(.is-magnifying) .dock-magnify-item:focus-visible {
     --dock-scale: 1.28;
     --dock-shift: 0px;
@@ -2451,8 +2447,7 @@ a:focus-visible,
   display: none;
 }
 
-@media (min-width: 768px) {
-  .dock-app.dock-trash,
+.dock-app.dock-trash,
   .dock-app.dock-trash:hover,
   .dock-app.dock-trash:focus-visible,
   .os-shell[data-theme="dark"] .dock-app.dock-trash {
@@ -2477,7 +2472,6 @@ a:focus-visible,
     pointer-events: none;
     user-select: none;
   }
-}
 
 .sr-only {
   position: absolute !important;
@@ -2491,391 +2485,7 @@ a:focus-visible,
   border: 0 !important;
 }
 
-/* Mobile launcher and full-screen applications ------------------------- */
-@media (max-width: 767px) {
-  .os-shell {
-    --menu-height: calc(45px + env(safe-area-inset-top));
-  }
-
-  .wallpaper-aurora {
-    filter: blur(48px);
-    mix-blend-mode: normal;
-  }
-
-  .wallpaper-grain {
-    opacity: 0.1;
-  }
-
-  .menu-bar {
-    gap: 4px;
-    padding-right: max(7px, env(safe-area-inset-right));
-    padding-left: max(7px, env(safe-area-inset-left));
-  }
-
-  .menu-left,
-  .menu-right {
-    height: 44px;
-  }
-
-  .desktop-menu-button,
-  .active-app-name {
-    display: none;
-  }
-
-  .menu-bar button {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0 10px;
-  }
-
-  .menu-bar button:focus-visible {
-    outline-offset: -2px;
-  }
-
-  .menu-bar .monogram {
-    width: 44px;
-  }
-
-  .menu-right {
-    gap: 0;
-  }
-
-  .menu-right time {
-    min-width: 0;
-    max-width: 7.5rem;
-    padding-left: 3px;
-    font-size: 0.6875rem;
-  }
-
-  .menu-popover {
-    top: calc(var(--menu-height) + 6px);
-    right: 8px;
-    left: 8px !important;
-    width: auto;
-  }
-
-  .menu-popover button {
-    min-height: 44px;
-  }
-
-  .desktop {
-    inset: var(--menu-height) 0 0;
-  }
-
-  .window-layer {
-    display: none;
-  }
-
-  .mobile-launcher {
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    overscroll-behavior: contain;
-    padding: clamp(48px, 9vh, 82px) max(20px, env(safe-area-inset-left)) calc(120px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-right));
-    color: var(--ink);
-    background: linear-gradient(180deg, rgba(248, 251, 255, 0.46), rgba(248, 251, 255, 0.22) 72%, rgba(248, 251, 255, 0.12));
-  }
-
-  .os-shell[data-theme="dark"] .mobile-launcher {
-    background: linear-gradient(180deg, rgba(5, 9, 22, 0.42), rgba(5, 9, 22, 0.27) 72%, rgba(5, 9, 22, 0.16));
-  }
-
-  .launcher-intro {
-    max-width: 29rem;
-    margin: 0 auto;
-  }
-
-  .launcher-intro > span {
-    color: var(--muted);
-    font-size: 0.6875rem;
-    font-weight: var(--weight-medium);
-    letter-spacing: 0.15em;
-  }
-
-  .launcher-intro h1 {
-    margin: 14px 0 11px;
-    color: var(--ink);
-    font-size: clamp(2.65rem, 12.5vw, 3.7rem);
-    font-weight: var(--weight-bold);
-    letter-spacing: -0.02em;
-    line-height: 0.96;
-    text-shadow: none;
-  }
-
-  .launcher-intro p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.875rem;
-    line-height: 1.6;
-  }
-
-  .os-shell[data-theme="light"] .launcher-intro > span,
-  .os-shell[data-theme="light"] .launcher-intro p {
-    color: var(--ink);
-  }
-
-  .launcher-grid {
-    width: 100%;
-    max-width: 29rem;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 25px 12px;
-    margin: 45px auto 0;
-  }
-
-  .launcher-grid > button {
-    min-width: 0;
-    min-height: 86px;
-    display: grid;
-    justify-items: center;
-    align-content: start;
-    gap: 8px;
-    padding: 0 3px;
-    border: 0;
-    border-radius: 16px;
-    color: var(--ink);
-    background: transparent;
-    font-size: 0.6875rem;
-    cursor: pointer;
-  }
-
-  .launcher-grid > button:active {
-    transform: scale(0.96);
-  }
-
-  .launcher-grid .app-tile {
-    width: 64px;
-    height: 64px;
-    border-radius: 19px;
-    font-size: 1.65rem;
-  }
-
-  .launcher-grid strong {
-    max-width: 100%;
-    overflow: hidden;
-    font-weight: var(--weight-medium);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-shadow: none;
-  }
-
-  .mobile-app-panel {
-    position: absolute;
-    inset: 0 0 calc(76px + env(safe-area-inset-bottom));
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    color: var(--ink);
-    background: var(--panel-strong);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
-    animation: mobile-app-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-
-  @keyframes mobile-app-in {
-    from { opacity: 0; transform: translateY(12px) scale(0.99); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  .mobile-app-titlebar {
-    flex: 0 0 52px;
-    min-width: 0;
-    display: grid;
-    grid-template-columns: 52px minmax(0, 1fr) 52px;
-    align-items: center;
-    padding: 0;
-    border-bottom: 1px solid var(--line-subtle);
-    background: var(--panel-soft);
-  }
-
-  .mobile-app-titlebar strong {
-    overflow: hidden;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 0.8125rem;
-  }
-
-  .mobile-app-titlebar button {
-    width: 48px;
-    height: 48px;
-    justify-self: center;
-    padding: 0;
-    border: 0;
-    border-radius: 12px;
-    color: inherit;
-    background: transparent;
-    font-size: 1.25rem;
-    cursor: pointer;
-  }
-
-  .mobile-app-titlebar button:hover,
-  .mobile-app-titlebar button:focus-visible {
-    background: var(--control-hover);
-  }
-
-  .mobile-app-content {
-    container-type: inline-size;
-    flex: 1;
-    min-width: 0;
-    min-height: 0;
-    overflow: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-  }
-
-  .app-view {
-    padding: 32px max(20px, env(safe-area-inset-right)) calc(42px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
-  }
-
-  .primary-action,
-  .secondary-action {
-    min-height: 44px;
-    padding-inline: 16px;
-    border-radius: 12px;
-  }
-
-  .welcome-view {
-    justify-content: flex-start;
-  }
-
-  .welcome-hero,
-  .about-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .welcome-portrait {
-    width: min(222px, 70vw);
-    margin-top: 16px;
-  }
-
-  .project-grid,
-  .experiment-grid,
-  .principle-grid,
-  .setting-options,
-  .wallpaper-options {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .wallpaper-option > .wallpaper-preview {
-    height: 68px;
-  }
-
-  .stat-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-  }
-
-  .stat-item {
-    padding: 11px 9px;
-  }
-
-  .stat-item dd {
-    font-size: 1.05rem;
-  }
-
-  .spotlight-backdrop {
-    place-items: start center;
-    padding: calc(var(--menu-height) + 10px) 8px calc(88px + env(safe-area-inset-bottom));
-  }
-
-  .spotlight {
-    width: 100%;
-    max-height: min(74dvh, 560px);
-    border-radius: 18px;
-  }
-
-  .spotlight-input {
-    flex-basis: 58px;
-    gap: 10px;
-    padding: 0 13px;
-    font-size: 1.3rem;
-  }
-
-  .spotlight-input input {
-    font-size: 0.9375rem;
-  }
-
-  .dock {
-    left: max(6px, env(safe-area-inset-left));
-    right: max(6px, env(safe-area-inset-right));
-    bottom: max(6px, env(safe-area-inset-bottom));
-    width: auto;
-    max-width: none;
-    justify-content: flex-start;
-    gap: 5px;
-    padding: 7px 8px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    border-radius: 20px;
-    scrollbar-width: none;
-    transform: none;
-  }
-
-  .dock::-webkit-scrollbar {
-    display: none;
-  }
-
-  .dock-app,
-  .minimized-window {
-    --dock-scale: 1 !important;
-    --dock-shift: 0px !important;
-    --dock-label-scale: 1 !important;
-    --dock-label-bottom: 56px !important;
-    width: 46px;
-    min-width: 46px;
-    height: 46px;
-    border-radius: 14px;
-    font-size: 1.15rem;
-    transform: none;
-  }
-
-  .dock-app:hover,
-  .dock-app:focus-visible,
-  .minimized-window:hover,
-  .minimized-window:focus-visible {
-    transform: none;
-  }
-
-  .dock-app small,
-  .minimized-window small {
-    display: none !important;
-  }
-
-  .running-dot {
-    bottom: -6px;
-  }
-
-  .dock-divider {
-    --dock-shift: 0px !important;
-    height: 29px;
-    transform: none;
-  }
-}
-
-@media (max-width: 360px) {
-  .launcher-grid {
-    column-gap: 6px;
-  }
-
-  .launcher-grid .app-tile {
-    width: 58px;
-    height: 58px;
-    border-radius: 17px;
-  }
-
-  .menu-right time {
-    display: none;
-  }
-
-  .stat-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-height: 620px) and (min-width: 768px) {
+@media (max-height: 620px) {
   .window-layer {
     bottom: 70px;
   }
@@ -3042,8 +2652,7 @@ a:focus-visible,
   .dock,
   .os-window,
   .menu-popover,
-  .spotlight,
-  .mobile-app-panel {
+  .spotlight {
     forced-color-adjust: auto;
     background: Canvas;
     color: CanvasText;
@@ -3092,8 +2701,7 @@ a:focus-visible,
 
 .active-app-name,
 .window-titlebar > strong,
-.window-title-control,
-.mobile-app-titlebar > strong {
+.window-title-control {
   font-size: var(--type-body);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-body);
@@ -3138,8 +2746,7 @@ a:focus-visible,
 .contact-orb svg,
 .setting-option svg,
 .trash-file-icon svg,
-.status-button svg,
-.mobile-app-titlebar svg {
+.status-button svg {
   display: block;
   flex: 0 0 auto;
 }
@@ -3476,77 +3083,6 @@ a:focus-visible,
   font-size: var(--type-subheadline);
   font-weight: var(--weight-medium);
   line-height: var(--leading-subheadline);
-}
-
-@media (max-width: 767px) {
-  .launcher-intro > span {
-    font-size: var(--type-caption);
-    font-weight: var(--weight-medium);
-    letter-spacing: 0.06em;
-    line-height: var(--leading-caption);
-  }
-
-  .launcher-intro h1 {
-    font-weight: var(--weight-bold);
-    letter-spacing: -0.02em;
-    line-height: 1.04;
-  }
-
-  .launcher-intro p {
-    font-size: var(--type-body);
-    line-height: 1.25rem;
-  }
-
-  .launcher-grid > button,
-  .launcher-grid strong {
-    font-size: var(--type-subheadline);
-    font-weight: var(--weight-medium);
-    line-height: var(--leading-subheadline);
-  }
-
-  .mobile-app-panel {
-    inset: 0;
-  }
-
-  .mobile-app-titlebar {
-    grid-template-columns: minmax(88px, 1fr) minmax(0, 1fr) minmax(88px, 1fr);
-  }
-
-  .mobile-app-titlebar button {
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .mobile-back-button {
-    width: auto !important;
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-start !important;
-    gap: 2px;
-    margin-left: 4px;
-    padding: 0 8px 0 4px !important;
-    font-size: var(--type-body) !important;
-    font-weight: var(--weight-medium);
-    line-height: var(--leading-body);
-  }
-
-  .dock.is-mobile-hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  .dock-app,
-  .minimized-window {
-    width: 46px;
-    min-width: 46px;
-    height: 46px;
-  }
-
-  .spotlight-input input {
-    font-size: var(--type-title-2);
-    line-height: var(--leading-title-2);
-  }
 }
 
 @media (forced-colors: active) {
