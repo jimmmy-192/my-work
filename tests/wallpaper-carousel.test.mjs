@@ -8,14 +8,16 @@ import {
   getNextWallpaperSlide,
 } from "../app/os/wallpaper-carousel.ts";
 
-test("rotates two photo wallpapers every two minutes", () => {
+test("rotates the ordered photo wallpapers every two minutes", () => {
   assert.equal(WALLPAPER_SLIDE_INTERVAL_MS, 120_000);
   assert.deepEqual(
     PHOTO_WALLPAPERS.map((photo) => photo.url),
-    ["/wallpapers/snow-mountain.jpg", "/wallpapers/garden-canopy-upright.jpg"],
+    ["/wallpapers/snow-mountain.jpg", "/wallpapers/garden-canopy-upright.jpg", "/wallpapers/blue-folds.png"],
   );
   assert.equal(getNextWallpaperSlide(0), 1);
-  assert.equal(getNextWallpaperSlide(1), 0);
+  assert.equal(getNextWallpaperSlide(1), 2);
+  assert.equal(getNextWallpaperSlide(2), 0);
+  assert.equal(getNextWallpaperSlide(3, 5), 4);
 });
 
 test("keeps the displayed photo and Liquid Glass snapshot in sync", async () => {

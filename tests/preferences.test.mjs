@@ -9,28 +9,28 @@ import {
   writeStoredPreference,
 } from "../app/os/preferences.ts";
 
-test("defines five unique wallpaper presets and validates their identifiers", () => {
+test("keeps only the photo carousel wallpaper option", () => {
   const values = WALLPAPER_OPTIONS.map((option) => option.value);
 
-  assert.equal(values.length, 5);
+  assert.deepEqual(values, ["mountain"]);
   assert.equal(new Set(values).size, values.length);
   values.forEach((value) => assert.equal(isWallpaperPreference(value), true));
   assert.equal(isWallpaperPreference("unknown"), false);
   assert.equal(isWallpaperPreference(null), false);
 });
 
-test("migrates the former default to the mountain photo without overriding choices", () => {
+test("migrates every retired wallpaper choice to the photo carousel", () => {
   assert.equal(resolveInitialWallpaper(null, "aurora"), "mountain");
   assert.equal(resolveInitialWallpaper(null, null), "mountain");
-  assert.equal(resolveInitialWallpaper(null, "tide"), "tide");
-  assert.equal(resolveInitialWallpaper("aurora", "tide"), "aurora");
-  assert.equal(resolveInitialWallpaper("sunset", "aurora"), "sunset");
+  assert.equal(resolveInitialWallpaper(null, "tide"), "mountain");
+  assert.equal(resolveInitialWallpaper("aurora", "tide"), "mountain");
+  assert.equal(resolveInitialWallpaper("sunset", "aurora"), "mountain");
 });
 
 test("reads only valid stored wallpaper values", () => {
   assert.equal(
-    readStoredPreference({ getItem: () => "sunset" }, "myos-wallpaper", isWallpaperPreference),
-    "sunset",
+    readStoredPreference({ getItem: () => "mountain" }, "myos-wallpaper", isWallpaperPreference),
+    "mountain",
   );
   assert.equal(
     readStoredPreference({ getItem: () => "retired-preset" }, "myos-wallpaper", isWallpaperPreference),
@@ -49,13 +49,13 @@ test("keeps the interface usable when browser storage is unavailable", () => {
   };
 
   assert.equal(readStoredPreference(unavailable, "myos-wallpaper", isWallpaperPreference), null);
-  assert.equal(writeStoredPreference(unavailable, "myos-wallpaper", "iris"), false);
+  assert.equal(writeStoredPreference(unavailable, "myos-wallpaper", "mountain"), false);
 });
 
 test("writes a selected wallpaper identifier without extra data", () => {
   const writes = [];
   const storage = { setItem: (key, value) => writes.push([key, value]) };
 
-  assert.equal(writeStoredPreference(storage, "myos-wallpaper", "tide"), true);
-  assert.deepEqual(writes, [["myos-wallpaper", "tide"]]);
+  assert.equal(writeStoredPreference(storage, "myos-wallpaper", "mountain"), true);
+  assert.deepEqual(writes, [["myos-wallpaper", "mountain"]]);
 });

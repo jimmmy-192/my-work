@@ -1676,12 +1676,6 @@ a:focus-visible,
   gap: 10px;
 }
 
-.wallpaper-options {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
 .setting-option {
   min-width: 0;
   min-height: 72px;
@@ -1754,17 +1748,160 @@ a:focus-visible,
 .setting-swatch-standard { background: linear-gradient(145deg, #e8f6ef, #5ca488); }
 .setting-swatch-readable { background: linear-gradient(145deg, #fff, #b8d4c8); }
 
-.wallpaper-option {
-  min-height: 132px;
-  grid-template-columns: minmax(0, 1fr) 16px;
-  align-content: start;
-  align-items: center;
+.wallpaper-manager {
+  padding: 12px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 16px;
+  background: var(--card);
 }
 
-.wallpaper-option > .wallpaper-preview {
-  grid-column: 1 / -1;
-  width: 100%;
-  height: clamp(62px, 8vw, 76px);
+.wallpaper-manager-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.wallpaper-manager-heading strong,
+.wallpaper-manager-heading small,
+.wallpaper-sort-name strong,
+.wallpaper-sort-name small {
+  display: block;
+}
+
+.wallpaper-manager-heading strong {
+  font-size: 0.8125rem;
+}
+
+.wallpaper-manager-heading small,
+.wallpaper-sort-name small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.625rem;
+}
+
+.wallpaper-upload-button {
+  position: relative;
+  flex: none;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, white);
+  border-radius: 8px;
+  color: white;
+  background: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.wallpaper-upload-button:hover {
+  filter: brightness(1.06);
+}
+
+.wallpaper-upload-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.wallpaper-sort-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wallpaper-sort-list li {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 16px 84px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 8px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-hover) 74%, transparent);
+  cursor: grab;
+  transition: opacity 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.wallpaper-sort-list li:hover {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line-subtle));
+}
+
+.wallpaper-sort-list li.is-dragging {
+  opacity: 0.42;
+  transform: scale(0.99);
+}
+
+.wallpaper-sort-handle {
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: -0.22em;
+}
+
+.wallpaper-sort-preview {
+  width: 84px;
+  height: 48px;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.54);
+  border-radius: 9px;
+  background-position: center;
+  background-size: cover;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+.wallpaper-sort-name {
+  min-width: 0;
+}
+
+.wallpaper-sort-name strong {
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wallpaper-sort-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.wallpaper-sort-actions button {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line-subtle);
+  border-radius: 7px;
+  color: inherit;
+  background: var(--card);
+  cursor: pointer;
+}
+
+.wallpaper-sort-actions button:hover:not(:disabled) {
+  background: var(--card-hover);
+}
+
+.wallpaper-sort-actions button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.wallpaper-sort-actions .wallpaper-remove {
+  color: #c7463c;
+}
+
+.wallpaper-manager-message {
+  margin: 9px 2px 0;
+  color: var(--muted);
+  font-size: 0.6875rem;
 }
 
 .wallpaper-preview {
@@ -1920,8 +2057,7 @@ a:focus-visible,
   }
 
   .principle-grid,
-  .setting-options,
-  .wallpaper-options {
+  .setting-options {
     grid-template-columns: minmax(0, 1fr);
   }
 

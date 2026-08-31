@@ -34,6 +34,7 @@ import {
   WALLPAPER_SLIDE_INTERVAL_MS,
   getNextWallpaperSlide,
 } from "./wallpaper-carousel";
+import type { WallpaperPhoto } from "./wallpaper-carousel";
 import {
   MIN_HEIGHT,
   MIN_WIDTH,
@@ -77,6 +78,8 @@ const THEME_KEY = "myos-theme";
 const GLASS_KEY = "myos-glass";
 const WALLPAPER_KEY = "myos-wallpaper-v2";
 const LEGACY_WALLPAPER_KEY = "myos-wallpaper";
+const CUSTOM_WALLPAPERS_KEY = "myos-custom-wallpapers-v1";
+const WALLPAPER_ORDER_KEY = "myos-wallpaper-order-v1";
 const MENU_ORDER = ["myos", "go", "window", "help"] as const;
 type MenuId = (typeof MENU_ORDER)[number];
 const MENU_LABELS: Record<MenuId, string> = {
@@ -114,6 +117,8 @@ export function PortfolioOS() {
   const [wallpaper, setWallpaper] = useState<WallpaperPreference>("mountain");
   const [photoCarouselReady, setPhotoCarouselReady] = useState(false);
   const [photoSlideIndex, setPhotoSlideIndex] = useState(0);
+  const [customWallpaperPhotos, setCustomWallpaperPhotos] = useState<WallpaperPhoto[]>([]);
+  const [wallpaperOrder, setWallpaperOrder] = useState<string[]>([]);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [systemDark, setSystemDark] = useState(false);
@@ -150,8 +155,19 @@ export function PortfolioOS() {
   const resolvedTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
   const activeAppId = state.activeWindowId;
   const activeApp = activeAppId ? definitions.get(activeAppId) : undefined;
+  const photoWallpapers = useMemo(() => {
+    const all: WallpaperPhoto[] = [...PHOTO_WALLPAPERS, ...customWallpaperPhotos];
+    const byId = new Map(all.map((photo) => [photo.id, photo]));
+    const ordered = wallpaperOrder.flatMap((id) => {
+      const photo = byId.get(id);
+      if (!photo) return [];
+      byId.delete(id);
+      return [photo];
+    });
+    return [...ordered, ...byId.values()];
+  }, [customWallpaperPhotos, wallpaperOrder]);
   const displayedPhotoSlideIndex =
-    wallpaper === "mountain" && !prefersReducedMotion ? photoSlideIndex : 0;
+    wallpaper === "mountain" && !prefersReducedMotion && photoSlideIndex < photoWallpapers.length ? photoSlideIndex : 0;
   const selectWallpaper = useCallback(
     (nextWallpaper: WallpaperPreference) => {
       if (nextWallpaper !== wallpaper) {
@@ -186,7 +202,7 @@ export function PortfolioOS() {
     let frame: number | null = null;
 
     void Promise.all(
-      PHOTO_WALLPAPERS.map(async ({ url }) => {
+      photoWallpapers.map(async ({ url }) => {
         const image = new Image();
         image.src = url;
         await image.decode().catch(() => undefined);
@@ -204,7 +220,7 @@ export function PortfolioOS() {
       cancelled = true;
       if (frame !== null) window.cancelAnimationFrame(frame);
     };
-  }, [wallpaper]);
+  }, [photoWallpapers, wallpaper]);
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -221,10 +237,29 @@ export function PortfolioOS() {
     if (wallpaper !== "mountain" || !photoCarouselReady || prefersReducedMotion) return;
 
     const timer = window.setInterval(() => {
-      setPhotoSlideIndex((currentIndex) => getNextWallpaperSlide(currentIndex));
+      setPhotoSlideIndex((currentIndex) => getNextWallpaperSlide(currentIndex, photoWallpapers.length));
     }, WALLPAPER_SLIDE_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [photoCarouselReady, prefersReducedMotion, wallpaper]);
+  }, [photoCarouselReady, photoWallpapers.length, prefersReducedMotion, wallpaper]);
+
+  const addWallpaperPhotos = useCallback((photos: WallpaperPhoto[]) => {
+    setCustomWallpaperPhotos((current) => [...current, ...photos]);
+    setWallpaperOrder((current) => [...current, ...photos.map((photo) => photo.id)]);
+    setPhotoCarouselReady(false);
+  }, []);
+
+  const removeWallpaperPhoto = useCallback((id: string) => {
+    setCustomWallpaperPhotos((current) => current.filter((photo) => photo.id !== id));
+    setWallpaperOrder((current) => current.filter((photoId) => photoId !== id));
+    setPhotoSlideIndex(0);
+    setPhotoCarouselReady(false);
+  }, []);
+
+  const reorderWallpaperPhotos = useCallback((ids: string[]) => {
+    setWallpaperOrder(ids);
+    setPhotoSlideIndex(0);
+    setPhotoCarouselReady(false);
+  }, []);
 
   const resetDockMagnification = useCallback(() => {
     if (dockAnimationFrameRef.current !== null) {
@@ -349,6 +384,16 @@ export function PortfolioOS() {
         if (savedTheme) setTheme(savedTheme);
         if (savedGlass) setGlass(savedGlass);
         setWallpaper(savedWallpaper);
+        try {
+          const custom = JSON.parse(storage.getItem(CUSTOM_WALLPAPERS_KEY) ?? "[]") as WallpaperPhoto[];
+          const order = JSON.parse(storage.getItem(WALLPAPER_ORDER_KEY) ?? "[]") as string[];
+          if (Array.isArray(custom)) {
+            setCustomWallpaperPhotos(custom.filter((photo) => photo?.custom && typeof photo.id === "string" && typeof photo.name === "string" && typeof photo.url === "string"));
+          }
+          if (Array.isArray(order)) setWallpaperOrder(order.filter((id) => typeof id === "string"));
+        } catch {
+          // Ignore malformed browser-only wallpaper data.
+        }
       }
       setPreferencesReady(true);
     }, 0);
@@ -371,6 +416,13 @@ export function PortfolioOS() {
       writeStoredPreference(storage, WALLPAPER_KEY, wallpaper);
     }
   }, [preferencesReady, wallpaper]);
+
+  useEffect(() => {
+    const storage = getBrowserStorage();
+    if (!preferencesReady || !storage) return;
+    writeStoredPreference(storage, CUSTOM_WALLPAPERS_KEY, JSON.stringify(customWallpaperPhotos));
+    writeStoredPreference(storage, WALLPAPER_ORDER_KEY, JSON.stringify(photoWallpapers.map((photo) => photo.id)));
+  }, [customWallpaperPhotos, photoWallpapers, preferencesReady]);
 
   useEffect(() => {
     const colorQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -910,7 +962,7 @@ export function PortfolioOS() {
     >
       {wallpaper === "mountain" ? (
         <div className="wallpaper-photo-carousel" aria-hidden="true">
-          {PHOTO_WALLPAPERS.map((photo, index) => (
+          {photoWallpapers.map((photo, index) => (
             <span
               key={photo.id}
               className={`wallpaper-photo-slide${displayedPhotoSlideIndex === index ? " is-active" : ""}`}
@@ -1092,6 +1144,10 @@ export function PortfolioOS() {
                       setGlass={setGlass}
                       wallpaper={wallpaper}
                       setWallpaper={selectWallpaper}
+                      wallpaperPhotos={photoWallpapers}
+                      addWallpaperPhotos={addWallpaperPhotos}
+                      removeWallpaperPhoto={removeWallpaperPhoto}
+                      reorderWallpaperPhotos={reorderWallpaperPhotos}
                     />
                   </div>
                   {windowState.status === "normal"

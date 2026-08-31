@@ -1,7 +1,7 @@
 import { portfolioContent } from "../../content/portfolio";
 import { AppIcon, SystemIcon } from "./icons";
-import { WALLPAPER_OPTIONS } from "./preferences";
 import type { WallpaperPreference } from "./preferences";
+import type { WallpaperPhoto } from "./wallpaper-carousel";
 import type { AppId } from "./window-manager";
 
 type ThemePreference = "system" | "light" | "dark";
@@ -16,6 +16,10 @@ interface AppContentProps {
   setGlass: (glass: GlassPreference) => void;
   wallpaper: WallpaperPreference;
   setWallpaper: (wallpaper: WallpaperPreference) => void;
+  wallpaperPhotos: WallpaperPhoto[];
+  addWallpaperPhotos: (photos: WallpaperPhoto[]) => void;
+  removeWallpaperPhoto: (id: string) => void;
+  reorderWallpaperPhotos: (ids: string[]) => void;
 }
 
 function AppHeader({ eyebrow, title, intro }: { eyebrow: string; title: string; intro?: string }) {
@@ -231,37 +235,111 @@ function ChoiceGroup<T extends string>({
 }
 
 function WallpaperGroup({
-  value,
-  onChange,
+  photos,
+  onAdd,
+  onRemove,
+  onReorder,
 }: {
-  value: WallpaperPreference;
-  onChange: (value: WallpaperPreference) => void;
+  photos: WallpaperPhoto[];
+  onAdd: (photos: WallpaperPhoto[]) => void;
+  onRemove: (id: string) => void;
+  onReorder: (ids: string[]) => void;
 }) {
+  const [message, setMessage] = React.useState("");
+  const [draggedId, setDraggedId] = React.useState<string | null>(null);
+
+  const movePhoto = (id: string, offset: number) => {
+    const ids = photos.map((photo) => photo.id);
+    const from = ids.indexOf(id);
+    const to = from + offset;
+    if (from < 0 || to < 0 || to >= ids.length) return;
+    [ids[from], ids[to]] = [ids[to], ids[from]];
+    onReorder(ids);
+  };
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const available = Math.max(0, 5 - photos.filter((photo) => photo.custom).length);
+    if (available === 0) {
+      setMessage("最多可保存 5 张自定义壁纸");
+      return;
+    }
+
+    try {
+      const selected = Array.from(files).slice(0, available);
+      const uploaded = await Promise.all(selected.map(async (file, index) => {
+        const source = URL.createObjectURL(file);
+        try {
+          const image = new Image();
+          image.src = source;
+          await image.decode();
+          const scale = Math.min(1, 1600 / image.naturalWidth, 900 / image.naturalHeight);
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("Canvas unavailable");
+          context.fillStyle = "#101820";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          return {
+            id: `custom-${Date.now()}-${index}`,
+            name: file.name.replace(/\.[^.]+$/, "") || "自定义壁纸",
+            url: canvas.toDataURL("image/jpeg", 0.76),
+            custom: true,
+          } satisfies WallpaperPhoto;
+        } finally {
+          URL.revokeObjectURL(source);
+        }
+      }));
+
+      onAdd(uploaded);
+      setMessage(`已加入 ${uploaded.length} 张壁纸`);
+    } catch {
+      setMessage("图片无法读取，请换一张再试");
+    }
+  };
+
   return (
     <fieldset className="setting-group wallpaper-group">
       <legend>桌面背景</legend>
-      <div className="wallpaper-options">
-        {WALLPAPER_OPTIONS.map((option) => (
-          <button
-            className={`setting-option wallpaper-option${value === option.value ? " is-selected" : ""}`}
-            type="button"
-            aria-pressed={value === option.value}
-            onClick={() => onChange(option.value)}
-            key={option.value}
-          >
-            <span
-              className={`wallpaper-preview wallpaper-preview-${option.value}`}
-              aria-hidden="true"
-            />
-            <span>
-              <strong>{option.label}</strong>
-              <small>{option.description}</small>
-            </span>
-            <i aria-hidden="true">
-              {value === option.value ? <SystemIcon name="check" size={15} /> : null}
-            </i>
-          </button>
-        ))}
+      <div className="wallpaper-manager">
+        <div className="wallpaper-manager-heading">
+          <span><strong>照片轮播</strong><small>{photos.length} 张壁纸，每 2 分钟切换</small></span>
+          <label className="wallpaper-upload-button">
+            上传图片
+            <input type="file" accept="image/*" multiple onChange={(event) => { void handleFiles(event.currentTarget.files); event.currentTarget.value = ""; }} />
+          </label>
+        </div>
+        <ol className="wallpaper-sort-list" aria-label="壁纸轮播顺序">
+          {photos.map((photo, index) => (
+            <li
+              key={photo.id}
+              draggable
+              className={draggedId === photo.id ? "is-dragging" : ""}
+              onDragStart={() => setDraggedId(photo.id)}
+              onDragEnd={() => setDraggedId(null)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={() => {
+                if (!draggedId || draggedId === photo.id) return;
+                const ids = photos.map((item) => item.id).filter((id) => id !== draggedId);
+                ids.splice(index, 0, draggedId);
+                onReorder(ids);
+                setDraggedId(null);
+              }}
+            >
+              <span className="wallpaper-sort-handle" aria-hidden="true">⋮⋮</span>
+              <span className="wallpaper-sort-preview" style={{ backgroundImage: `url("${photo.url}")` }} />
+              <span className="wallpaper-sort-name"><strong>{photo.name}</strong><small>{photo.custom ? "自定义" : "内置"}</small></span>
+              <span className="wallpaper-sort-actions">
+                <button type="button" aria-label={`上移${photo.name}`} disabled={index === 0} onClick={() => movePhoto(photo.id, -1)}>↑</button>
+                <button type="button" aria-label={`下移${photo.name}`} disabled={index === photos.length - 1} onClick={() => movePhoto(photo.id, 1)}>↓</button>
+                {photo.custom ? <button type="button" className="wallpaper-remove" aria-label={`删除${photo.name}`} onClick={() => onRemove(photo.id)}>×</button> : null}
+              </span>
+            </li>
+          ))}
+        </ol>
+        {message ? <p className="wallpaper-manager-message" role="status">{message}</p> : null}
       </div>
     </fieldset>
   );
@@ -272,8 +350,10 @@ function SettingsApp({
   setTheme,
   glass,
   setGlass,
-  wallpaper,
-  setWallpaper,
+  wallpaperPhotos,
+  addWallpaperPhotos,
+  removeWallpaperPhoto,
+  reorderWallpaperPhotos,
 }: Omit<AppContentProps, "appId" | "openApp">) {
   const themeOptions = [
     { value: "system", label: "跟随系统", description: "自动匹配设备外观" },
@@ -294,7 +374,7 @@ function SettingsApp({
         intro="背景选择只保存在当前浏览器，不会改变访客看到的默认背景。"
       />
       <form className="settings-form" onSubmit={(event) => event.preventDefault()}>
-        <WallpaperGroup value={wallpaper} onChange={setWallpaper} />
+        <WallpaperGroup photos={wallpaperPhotos} onAdd={addWallpaperPhotos} onRemove={removeWallpaperPhoto} onReorder={reorderWallpaperPhotos} />
         <ChoiceGroup label="主题" value={theme} options={themeOptions} onChange={setTheme} />
         <ChoiceGroup label="玻璃效果" value={glass} options={glassOptions} onChange={setGlass} />
       </form>
@@ -346,6 +426,10 @@ export function AppContent(props: AppContentProps) {
           setGlass={props.setGlass}
           wallpaper={props.wallpaper}
           setWallpaper={props.setWallpaper}
+          wallpaperPhotos={props.wallpaperPhotos}
+          addWallpaperPhotos={props.addWallpaperPhotos}
+          removeWallpaperPhoto={props.removeWallpaperPhoto}
+          reorderWallpaperPhotos={props.reorderWallpaperPhotos}
         />
       );
     case "trash":

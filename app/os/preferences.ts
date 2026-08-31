@@ -1,13 +1,9 @@
 export const WALLPAPER_OPTIONS = [
   {
     value: "mountain",
-    label: "湖山与庭院",
-    description: "两张摄影作品，每 2 分钟切换",
+    label: "照片轮播",
+    description: "每 2 分钟切换，可上传与排序",
   },
-  { value: "aurora", label: "青岚晨雾", description: "柔和绿意与清晨光线" },
-  { value: "iris", label: "鸢尾暮光", description: "粉紫色的安静暮光" },
-  { value: "sunset", label: "珊瑚落日", description: "温暖、柔软的晚霞" },
-  { value: "tide", label: "深海潮汐", description: "清透蓝色与海面微光" },
 ] as const;
 
 export type WallpaperPreference = (typeof WALLPAPER_OPTIONS)[number]["value"];
@@ -29,7 +25,7 @@ export function resolveInitialWallpaper(
   legacyValue: string | null,
 ): WallpaperPreference {
   if (isWallpaperPreference(currentValue)) return currentValue;
-  if (isWallpaperPreference(legacyValue) && legacyValue !== "aurora") return legacyValue;
+  if (isWallpaperPreference(legacyValue)) return legacyValue;
   return "mountain";
 }
 
