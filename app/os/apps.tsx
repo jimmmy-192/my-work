@@ -1,3 +1,5 @@
+import { useState } from "react";
+import type { CSSProperties } from "react";
 import { portfolioContent } from "../../content/portfolio";
 import { AppIcon, SystemIcon } from "./icons";
 import type { WallpaperPreference } from "./preferences";
@@ -84,7 +86,7 @@ function WorkApp() {
           <article
             className="project-card"
             key={project.id}
-            style={{ "--project-accent": project.accent } as React.CSSProperties}
+            style={{ "--project-accent": project.accent } as CSSProperties}
           >
             <div className="project-visual" aria-hidden="true">
               <span className="project-number">{project.number}</span>
@@ -245,8 +247,8 @@ function WallpaperGroup({
   onRemove: (id: string) => void;
   onReorder: (ids: string[]) => void;
 }) {
-  const [message, setMessage] = React.useState("");
-  const [draggedId, setDraggedId] = React.useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const [draggedId, setDraggedId] = useState<string | null>(null);
 
   const movePhoto = (id: string, offset: number) => {
     const ids = photos.map((photo) => photo.id);
