@@ -1,6 +1,7 @@
 export const PHOTO_WALLPAPERS = [
   { id: "lake", url: "/wallpapers/snow-mountain.jpg" },
   { id: "garden", url: "/wallpapers/garden-canopy-upright.jpg" },
+  { id: "blue-folds", url: "/wallpapers/blue-folds.png" },
 ] as const;
 
 export const WALLPAPER_SLIDE_INTERVAL_MS = 120_000;
