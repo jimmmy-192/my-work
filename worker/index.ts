@@ -29,6 +29,13 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
+    // Old preview links used `?v=…` as a cache buster. Canonicalize them so
+    // bookmarked preview URLs cannot remain pinned to an obsolete HTML shell.
+    if (url.pathname === "/" && url.searchParams.has("v")) {
+      url.searchParams.delete("v");
+      return Response.redirect(url.toString(), 302);
+    }
+
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return handleImageOptimization(request, {
