@@ -37,5 +37,6 @@ test("uses white menu-bar content and pill-shaped top-level controls", () => {
 test("uses optical icon weights and one Dock running-state indicator", () => {
   assert.match(icons, /function opticalStrokeWidth/);
   assert.doesNotMatch(css, /\.dock-app\.is-active::after/);
-  assert.match(css, /\.dock-app\.is-active \.running-dot/);
+  assert.match(css, /\.running-dot\s*\{/);
+  assert.match(os, /className="running-dot"/);
 });

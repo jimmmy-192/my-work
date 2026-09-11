@@ -29,9 +29,13 @@ MyOS 是一个中文优先的单页个人作品网站。它借用桌面系统的
 需要 Node.js `>=22.13.0`。
 
 ```bash
-npm install
+git clone https://github.com/jimmmy-192/my-work.git
+cd my-work
+npm ci
 npm run dev
 ```
+
+在另一台电脑上只需要安装 Node.js 22 或更高版本，再执行以上命令。项目不依赖本机私有文件、环境变量、数据库或外部 API。
 
 构建、检查与测试：
 
@@ -40,6 +44,12 @@ npm run build
 npm run lint
 npm test
 ```
+
+## GitHub Pages
+
+网站地址：<https://jimmmy-192.github.io/my-work/>
+
+每次向 `main` 分支推送后，GitHub Actions 会自动构建并发布完整网站。发布内容来自 `dist/client`，并自动适配 `/my-work/` 子路径。
 
 ## 目录结构
 
