@@ -1648,6 +1648,77 @@ a:focus-visible,
   font-style: normal;
 }
 
+.settings-sync {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding: 11px 12px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.settings-sync-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--muted);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--muted) 16%, transparent);
+}
+
+.settings-sync-synced .settings-sync-dot {
+  background: #36a269;
+  box-shadow: 0 0 0 4px rgba(54, 162, 105, 0.15);
+}
+
+.settings-sync-saving .settings-sync-dot,
+.settings-sync-checking .settings-sync-dot {
+  background: #e3a329;
+  box-shadow: 0 0 0 4px rgba(227, 163, 41, 0.15);
+}
+
+.settings-sync-error .settings-sync-dot {
+  background: #e35d56;
+  box-shadow: 0 0 0 4px rgba(227, 93, 86, 0.15);
+}
+
+.settings-sync > span:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-sync strong,
+.settings-sync small {
+  display: block;
+}
+
+.settings-sync strong {
+  font-size: 0.75rem;
+}
+
+.settings-sync small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.625rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-sync a {
+  flex: none;
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: white;
+  background: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
 .settings-form {
   display: grid;
   gap: 28px;

@@ -2,12 +2,15 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { portfolioContent } from "../../content/portfolio";
 import { AppIcon, SystemIcon } from "./icons";
+import type {
+  CloudAccount,
+  CloudSyncStatus,
+  GlassPreference,
+  ThemePreference,
+} from "./cloud-preferences";
 import type { WallpaperPreference } from "./preferences";
 import type { WallpaperPhoto } from "./wallpaper-carousel";
 import type { AppId } from "./window-manager";
-
-type ThemePreference = "system" | "light" | "dark";
-type GlassPreference = "clear" | "standard" | "readable";
 
 interface AppContentProps {
   appId: AppId;
@@ -22,6 +25,8 @@ interface AppContentProps {
   addWallpaperPhotos: (photos: WallpaperPhoto[]) => void;
   removeWallpaperPhoto: (id: string) => void;
   reorderWallpaperPhotos: (ids: string[]) => void;
+  cloudSyncStatus: CloudSyncStatus;
+  cloudAccount: CloudAccount | null;
 }
 
 function AppHeader({ eyebrow, title, intro }: { eyebrow: string; title: string; intro?: string }) {
@@ -356,6 +361,8 @@ function SettingsApp({
   addWallpaperPhotos,
   removeWallpaperPhoto,
   reorderWallpaperPhotos,
+  cloudSyncStatus,
+  cloudAccount,
 }: Omit<AppContentProps, "appId" | "openApp">) {
   const themeOptions = [
     { value: "system", label: "跟随系统", description: "自动匹配设备外观" },
@@ -373,8 +380,37 @@ function SettingsApp({
       <AppHeader
         eyebrow="PREFERENCES"
         title="外观设置"
-        intro="背景选择只保存在当前浏览器，不会改变访客看到的默认背景。"
+        intro="登录后，主题、玻璃效果、壁纸与轮播顺序会自动同步到你的其他设备。"
       />
+      <div className={`settings-sync settings-sync-${cloudSyncStatus}`} role="status">
+        <span className="settings-sync-dot" aria-hidden="true" />
+        <span>
+          <strong>
+            {cloudSyncStatus === "checking" ? "正在检查云端设置" : null}
+            {cloudSyncStatus === "saving" ? "正在保存到云端" : null}
+            {cloudSyncStatus === "synced" ? "已保存到云端" : null}
+            {cloudSyncStatus === "signed-out" ? "登录后开启跨设备同步" : null}
+            {cloudSyncStatus === "unavailable" ? "当前使用本机保存" : null}
+            {cloudSyncStatus === "error" ? "云端暂时未保存" : null}
+          </strong>
+          <small>
+            {cloudSyncStatus === "synced" && cloudAccount
+              ? cloudAccount.email
+              : cloudSyncStatus === "signed-out"
+                ? "当前设置仍会安全保留在这台设备"
+                : cloudSyncStatus === "unavailable"
+                  ? "在 ChatGPT Site 中打开即可使用云同步"
+                  : cloudSyncStatus === "error"
+                    ? "已保留本机副本，稍后修改时会再次尝试"
+                    : "主题和壁纸会自动保持一致"}
+          </small>
+        </span>
+        {cloudSyncStatus === "signed-out" ? (
+          <a href="/signin-with-chatgpt?return_to=%2F" target="_top">
+            登录 ChatGPT
+          </a>
+        ) : null}
+      </div>
       <form className="settings-form" onSubmit={(event) => event.preventDefault()}>
         <WallpaperGroup photos={wallpaperPhotos} onAdd={addWallpaperPhotos} onRemove={removeWallpaperPhoto} onReorder={reorderWallpaperPhotos} />
         <ChoiceGroup label="主题" value={theme} options={themeOptions} onChange={setTheme} />
@@ -432,6 +468,8 @@ export function AppContent(props: AppContentProps) {
           addWallpaperPhotos={props.addWallpaperPhotos}
           removeWallpaperPhoto={props.removeWallpaperPhoto}
           reorderWallpaperPhotos={props.reorderWallpaperPhotos}
+          cloudSyncStatus={props.cloudSyncStatus}
+          cloudAccount={props.cloudAccount}
         />
       );
     case "trash":

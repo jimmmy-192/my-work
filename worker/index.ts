@@ -1,10 +1,13 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { handlePreferencesApi } from "./preferences-api";
+import type { PreferencesEnv } from "./preferences-api";
 
-interface Env {
+interface Env extends PreferencesEnv {
   ASSETS: Fetcher;
   DB: D1Database;
+  WALLPAPERS: R2Bucket;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -28,6 +31,10 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/preferences" || url.pathname.startsWith("/api/wallpapers")) {
+      return handlePreferencesApi(request, env);
+    }
 
     // Old preview links used `?v=…` as a cache buster. Canonicalize them so
     // bookmarked preview URLs cannot remain pinned to an obsolete HTML shell.

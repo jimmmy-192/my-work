@@ -17,6 +17,20 @@ import type {
 } from "react";
 import { appDefinitions, portfolioContent } from "../../content/portfolio";
 import { AppContent } from "./apps";
+import {
+  deleteCloudWallpaper,
+  isCloudWallpaper,
+  loadCloudPreferences,
+  saveCloudPreferences,
+  uploadCloudWallpaper,
+} from "./cloud-preferences";
+import type {
+  CloudAccount,
+  CloudSyncStatus,
+  GlassPreference,
+  PreferenceSnapshot,
+  ThemePreference,
+} from "./cloud-preferences";
 import { getDockMagnification } from "./dock-magnification";
 import { AppIcon, SystemIcon } from "./icons";
 import type { SystemIconName } from "./icons";
@@ -44,8 +58,6 @@ import {
 } from "./window-manager";
 import type { AppId, Bounds, WindowState } from "./window-manager";
 
-type ThemePreference = "system" | "light" | "dark";
-type GlassPreference = "clear" | "standard" | "readable";
 type ResizeEdge = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
 interface PointerGesture {
@@ -105,6 +117,37 @@ function getBrowserStorage() {
   }
 }
 
+function readLocalWallpapers(storage: Storage | null) {
+  if (!storage) return { custom: [] as WallpaperPhoto[], order: [] as string[] };
+
+  try {
+    const custom = JSON.parse(storage.getItem(CUSTOM_WALLPAPERS_KEY) ?? "[]") as unknown;
+    const order = JSON.parse(storage.getItem(WALLPAPER_ORDER_KEY) ?? "[]") as unknown;
+    return {
+      custom: Array.isArray(custom)
+        ? custom.filter(
+            (photo): photo is WallpaperPhoto =>
+              Boolean(photo) &&
+              typeof photo === "object" &&
+              "custom" in photo &&
+              photo.custom === true &&
+              "id" in photo &&
+              typeof photo.id === "string" &&
+              "name" in photo &&
+              typeof photo.name === "string" &&
+              "url" in photo &&
+              typeof photo.url === "string",
+          )
+        : [],
+      order: Array.isArray(order)
+        ? order.filter((id): id is string => typeof id === "string")
+        : [],
+    };
+  } catch {
+    return { custom: [] as WallpaperPhoto[], order: [] as string[] };
+  }
+}
+
 function appStyle(accent: string): CSSProperties {
   return { "--app-accent": accent } as CSSProperties;
 }
@@ -121,6 +164,9 @@ export function PortfolioOS() {
   const [wallpaperOrder, setWallpaperOrder] = useState<string[]>([]);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [preferencesReady, setPreferencesReady] = useState(false);
+  const [cloudHydrated, setCloudHydrated] = useState(false);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>("checking");
+  const [cloudAccount, setCloudAccount] = useState<CloudAccount | null>(null);
   const [systemDark, setSystemDark] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchActiveIndex, setSearchActiveIndex] = useState(0);
@@ -147,6 +193,8 @@ export function PortfolioOS() {
   const dockPointerXRef = useRef<number | null>(null);
   const dockAnimationFrameRef = useRef<number | null>(null);
   const dockRestingItemsRef = useRef<DockRestingItem[]>([]);
+  const initializationStartedRef = useRef(false);
+  const uploadingWallpaperIdsRef = useRef(new Set<string>());
 
   const definitions = useMemo(
     () => new Map(appDefinitions.map((app) => [app.id, app])),
@@ -249,11 +297,19 @@ export function PortfolioOS() {
   }, []);
 
   const removeWallpaperPhoto = useCallback((id: string) => {
+    const removedPhoto = customWallpaperPhotos.find((photo) => photo.id === id);
     setCustomWallpaperPhotos((current) => current.filter((photo) => photo.id !== id));
     setWallpaperOrder((current) => current.filter((photoId) => photoId !== id));
     setPhotoSlideIndex(0);
     setPhotoCarouselReady(false);
-  }, []);
+
+    if (cloudHydrated && removedPhoto && isCloudWallpaper(removedPhoto)) {
+      setCloudSyncStatus("saving");
+      void deleteCloudWallpaper(id)
+        .then(() => setCloudSyncStatus("synced"))
+        .catch(() => setCloudSyncStatus("error"));
+    }
+  }, [cloudHydrated, customWallpaperPhotos]);
 
   const reorderWallpaperPhotos = useCallback((ids: string[]) => {
     setWallpaperOrder(ids);
@@ -372,32 +428,94 @@ export function PortfolioOS() {
   }, [resetDockMagnification, state.windows]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const storage = getBrowserStorage();
-      if (storage) {
-        const savedTheme = readStoredPreference(storage, THEME_KEY, isTheme);
-        const savedGlass = readStoredPreference(storage, GLASS_KEY, isGlass);
-        const savedWallpaper = resolveInitialWallpaper(
+    if (initializationStartedRef.current) return;
+    initializationStartedRef.current = true;
+
+    const storage = getBrowserStorage();
+    const localTheme = storage
+      ? readStoredPreference(storage, THEME_KEY, isTheme) ?? "system"
+      : "system";
+    const localGlass = storage
+      ? readStoredPreference(storage, GLASS_KEY, isGlass) ?? "standard"
+      : "standard";
+    const localWallpaper = storage
+      ? resolveInitialWallpaper(
           readStoredPreference(storage, WALLPAPER_KEY, isWallpaperPreference),
           readStoredPreference(storage, LEGACY_WALLPAPER_KEY, isWallpaperPreference),
-        );
-        if (savedTheme) setTheme(savedTheme);
-        if (savedGlass) setGlass(savedGlass);
-        setWallpaper(savedWallpaper);
-        try {
-          const custom = JSON.parse(storage.getItem(CUSTOM_WALLPAPERS_KEY) ?? "[]") as WallpaperPhoto[];
-          const order = JSON.parse(storage.getItem(WALLPAPER_ORDER_KEY) ?? "[]") as string[];
-          if (Array.isArray(custom)) {
-            setCustomWallpaperPhotos(custom.filter((photo) => photo?.custom && typeof photo.id === "string" && typeof photo.name === "string" && typeof photo.url === "string"));
-          }
-          if (Array.isArray(order)) setWallpaperOrder(order.filter((id) => typeof id === "string"));
-        } catch {
-          // Ignore malformed browser-only wallpaper data.
+        )
+      : "mountain";
+    const localWallpapers = readLocalWallpapers(storage);
+
+    setTheme(localTheme);
+    setGlass(localGlass);
+    setWallpaper(localWallpaper);
+    setCustomWallpaperPhotos(localWallpapers.custom);
+    setWallpaperOrder(localWallpapers.order);
+
+    const initializeCloud = async () => {
+      try {
+        const result = await loadCloudPreferences();
+        if (result.kind === "signed-out") {
+          setCloudSyncStatus(
+            window.location.hostname === "localhost" ? "unavailable" : "signed-out",
+          );
+          return;
         }
+        if (result.kind === "unavailable") {
+          setCloudSyncStatus("unavailable");
+          return;
+        }
+
+        setCloudAccount(result.data.account);
+        if (result.data.preferences) {
+          setTheme(result.data.preferences.theme);
+          setGlass(result.data.preferences.glass);
+          setWallpaper(result.data.preferences.wallpaper);
+          setWallpaperOrder(result.data.preferences.wallpaperOrder);
+          setCustomWallpaperPhotos(result.data.wallpapers);
+        } else {
+          const uploaded: WallpaperPhoto[] = [];
+          const replacementIds = new Map<string, string>();
+          try {
+            for (const localPhoto of localWallpapers.custom) {
+              if (!localPhoto.url.startsWith("data:")) continue;
+              const cloudPhoto = await uploadCloudWallpaper(localPhoto);
+              uploaded.push(cloudPhoto);
+              replacementIds.set(localPhoto.id, cloudPhoto.id);
+            }
+          } catch (error) {
+            await Promise.allSettled(uploaded.map((photo) => deleteCloudWallpaper(photo.id)));
+            throw error;
+          }
+
+          const migratedOrder = localWallpapers.order.map(
+            (id) => replacementIds.get(id) ?? id,
+          );
+          const migratedCustom = [
+            ...result.data.wallpapers,
+            ...uploaded,
+          ];
+          const snapshot: PreferenceSnapshot = {
+            theme: localTheme,
+            glass: localGlass,
+            wallpaper: localWallpaper,
+            wallpaperOrder: migratedOrder,
+          };
+          await saveCloudPreferences(snapshot);
+          setCustomWallpaperPhotos(migratedCustom);
+          setWallpaperOrder(migratedOrder);
+        }
+
+        setCloudHydrated(true);
+        setCloudSyncStatus("synced");
+      } catch {
+        setCloudSyncStatus("error");
+      } finally {
+        setPreferencesReady(true);
       }
-      setPreferencesReady(true);
-    }, 0);
-    return () => window.clearTimeout(timer);
+    };
+
+    void initializeCloud();
   }, []);
 
   useEffect(() => {
@@ -423,6 +541,59 @@ export function PortfolioOS() {
     writeStoredPreference(storage, CUSTOM_WALLPAPERS_KEY, JSON.stringify(customWallpaperPhotos));
     writeStoredPreference(storage, WALLPAPER_ORDER_KEY, JSON.stringify(photoWallpapers.map((photo) => photo.id)));
   }, [customWallpaperPhotos, photoWallpapers, preferencesReady]);
+
+  useEffect(() => {
+    if (!cloudHydrated || !cloudAccount) return;
+    const pendingPhoto = customWallpaperPhotos.find(
+      (photo) =>
+        photo.url.startsWith("data:") &&
+        !uploadingWallpaperIdsRef.current.has(photo.id),
+    );
+    if (!pendingPhoto) return;
+
+    uploadingWallpaperIdsRef.current.add(pendingPhoto.id);
+    setCloudSyncStatus("saving");
+    void uploadCloudWallpaper(pendingPhoto)
+      .then((cloudPhoto) => {
+        setCustomWallpaperPhotos((current) =>
+          current.map((photo) => (photo.id === pendingPhoto.id ? cloudPhoto : photo)),
+        );
+        setWallpaperOrder((current) =>
+          current.map((id) => (id === pendingPhoto.id ? cloudPhoto.id : id)),
+        );
+        setCloudSyncStatus("synced");
+      })
+      .catch(() => setCloudSyncStatus("error"))
+      .finally(() => uploadingWallpaperIdsRef.current.delete(pendingPhoto.id));
+  }, [cloudAccount, cloudHydrated, customWallpaperPhotos]);
+
+  useEffect(() => {
+    if (!preferencesReady || !cloudHydrated || !cloudAccount) return;
+    if (customWallpaperPhotos.some((photo) => photo.url.startsWith("data:"))) return;
+
+    const timer = window.setTimeout(() => {
+      setCloudSyncStatus("saving");
+      void saveCloudPreferences({
+        theme,
+        glass,
+        wallpaper,
+        wallpaperOrder: photoWallpapers.map((photo) => photo.id),
+      })
+        .then(() => setCloudSyncStatus("synced"))
+        .catch(() => setCloudSyncStatus("error"));
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    cloudAccount,
+    cloudHydrated,
+    customWallpaperPhotos,
+    glass,
+    photoWallpapers,
+    preferencesReady,
+    theme,
+    wallpaper,
+  ]);
 
   useEffect(() => {
     const colorQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -1148,6 +1319,8 @@ export function PortfolioOS() {
                       addWallpaperPhotos={addWallpaperPhotos}
                       removeWallpaperPhoto={removeWallpaperPhoto}
                       reorderWallpaperPhotos={reorderWallpaperPhotos}
+                      cloudSyncStatus={cloudSyncStatus}
+                      cloudAccount={cloudAccount}
                     />
                   </div>
                   {windowState.status === "normal"
