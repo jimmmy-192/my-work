@@ -29,7 +29,8 @@ export interface CloudPreferencesResponse {
   wallpapers: WallpaperPhoto[];
 }
 
-const publicBaseUrl = import.meta.env?.BASE_URL ?? "/";
+const publicBaseUrl =
+  (import.meta as ImportMeta & { env?: { BASE_URL?: string } }).env?.BASE_URL ?? "/";
 
 function apiUrl(path: string) {
   return `${publicBaseUrl}api/${path}`;
