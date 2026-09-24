@@ -121,10 +121,11 @@ async function initializeLiquidGlass(
       snapshot: ".os-shell",
       resolution: 1.25,
       refraction: 0.012,
-      aberration: 0.018,
+      aberration: 0,
       bevelDepth: 0.075,
       bevelWidth: 0.18,
-      frost: 1.2,
+      // Clear refraction avoids the stochastic frost pass and its colored grain.
+      frost: 0,
       shadow: false,
       specular: true,
       reveal: "none",

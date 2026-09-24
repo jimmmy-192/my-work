@@ -1140,6 +1140,8 @@ export function PortfolioOS() {
               style={{ backgroundImage: `url("${photo.url}")` }}
             />
           ))}
+          {/* The glass snapshot captures DOM elements, not CSS pseudo-elements. */}
+          <span className="wallpaper-photo-overlay" />
         </div>
       ) : null}
       <div className="wallpaper-aurora wallpaper-aurora-one" aria-hidden="true" />

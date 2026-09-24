@@ -440,8 +440,7 @@ a:focus-visible,
   pointer-events: none;
 }
 
-.wallpaper-photo-carousel::after {
-  content: "";
+.wallpaper-photo-overlay {
   position: absolute;
   z-index: 2;
   inset: 0;
@@ -463,6 +462,13 @@ a:focus-visible,
 .wallpaper-photo-slide.is-active {
   z-index: 1;
   opacity: 1;
+}
+
+@media (min-width: 768px) {
+  .wallpaper-photo-slide {
+    /* Keep the wide desktop composition behind the Dock in taller panels. */
+    inset-inline: min(0px, calc((100vw - 100dvh * 16 / 9) / 2));
+  }
 }
 
 .wallpaper-aurora {
