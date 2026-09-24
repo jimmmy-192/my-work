@@ -44,7 +44,7 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    base: process.env.GITHUB_ACTIONS ? "/my-work/" : "/",
+    base: process.env.GITHUB_ACTIONS && process.env.VERCEL !== "1" ? "/my-work/" : "/",
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,

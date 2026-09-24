@@ -11,6 +11,10 @@ async function renderSite() {
     };
   } catch (error) {
     if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") throw error;
+    assert.ok(
+      !process.env.GITHUB_ACTIONS && process.env.VERCEL !== "1",
+      "static deployments must generate dist/client/index.html instead of relying on a Worker",
+    );
   }
 
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -42,6 +46,14 @@ test("renders the complete MyOS portfolio shell", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Building your site/i);
 
   if (outputRoot) {
+    const assetPrefix = process.env.GITHUB_ACTIONS && process.env.VERCEL !== "1" ? "/my-work/" : "/";
+    const assetPaths = [...html.matchAll(/(?:src|href)="([^\"]+\.(?:js|css))"/g)].map((match) => match[1]);
+    assert.ok(assetPaths.length > 0, "the exported page links its scripts and stylesheets");
+    for (const assetPath of assetPaths) {
+      assert.ok(assetPath.startsWith(`${assetPrefix}_next/`), `${assetPath} uses the deployment's asset prefix`);
+      await readFile(new URL(assetPath.slice(assetPrefix.length), outputRoot));
+    }
+
     const portfolioBundlePath = html.match(/(?:\/my-work)?\/_next\/static\/chunks\/(PortfolioOS-[^"/]+\.js)/)?.[1];
     assert.ok(portfolioBundlePath, "the interactive portfolio bundle is linked from the exported page");
 

@@ -51,6 +51,12 @@ npm test
 
 每次向 `main` 分支推送后，GitHub Actions 会自动构建并发布完整网站。发布内容来自 `dist/client`，并自动适配 `/my-work/` 子路径。
 
+## Vercel
+
+导入仓库并选择 Vite。仓库中的 `vercel.json` 已设置构建命令 `npm run build` 和输出目录 `dist/client`。Vercel 构建会导出静态首页，并使用域名根路径 `/` 加载资源。
+
+Vercel 和 GitHub Pages 使用浏览器本地设置；账号与跨设备同步由 ChatGPT Sites 的 Worker 提供。
+
 ## 目录结构
 
 ```text
