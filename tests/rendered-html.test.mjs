@@ -32,7 +32,7 @@ async function renderSite() {
 test("renders the complete MyOS portfolio shell", async () => {
   const { html, outputRoot } = await renderSite();
   assert.match(html, /<html[^>]*lang="zh-CN"/i);
-  assert.match(html, /<title>MyOS · 你的个人作品桌面<\/title>/i);
+  assert.match(html, /<title>Sixxxx<\/title>/i);
   assert.match(html, /Liquid Glass 为灵感的个人作品网站/i);
   assert.match(html, /aria-label="MyOS 个人作品桌面"/i);
   assert.match(html, /data-wallpaper="mountain"/i);

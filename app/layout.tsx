@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const title = "MyOS · 你的个人作品桌面";
+const title = "Sixxxx";
 const description = "一个以 Liquid Glass 为灵感的个人作品网站。";
 
 export const viewport: Viewport = {
