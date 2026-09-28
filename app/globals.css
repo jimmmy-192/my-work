@@ -96,14 +96,14 @@ a:focus-visible,
   /* NSStatusBar is 22pt; 28px preserves the system density in a browser canvas. */
   --menu-height: calc(28px + env(safe-area-inset-top));
   --menu-control-height: 24px;
-  --menu-item-height: 28px;
+  --menu-item-height: 24px;
   /* AppKit standard title bar: 28pt high, 14pt lights, 20pt center spacing. */
   --window-titlebar-height: 28px;
   --traffic-control-width: 20px;
   --traffic-light-size: 14px;
   --traffic-titlebar-inset: 4px;
-  --dock-icon-size: 49px;
-  --dock-gap: 7px;
+  --dock-icon-size: min(var(--dock-size, 56px), calc((100vw - 64px - var(--dock-item-count, 5) * 10px) / var(--dock-item-count, 5)));
+  --dock-gap: clamp(6px, calc(var(--dock-icon-size) / 7), 10px);
   --dock-padding-x: 11px;
   --dock-padding-y: 7px;
   --ink: #10271f;
@@ -115,24 +115,24 @@ a:focus-visible,
   --panel-strong: rgba(249, 253, 250, 0.93);
   --panel-soft: rgba(255, 255, 255, 0.29);
   --bar: rgba(238, 250, 243, 0.5);
-  --menu-bar-surface: rgba(248, 250, 252, 0.12);
-  --menu-bar-highlight: rgba(255, 255, 255, 0.045);
+  --menu-bar-surface: transparent;
+  --menu-bar-highlight: transparent;
   --menu-bar-edge: transparent;
-  --menu-bar-filter: blur(6px) saturate(112%);
+  --menu-bar-filter: none;
   --menu-bar-ink: #fff;
   --menu-bar-shadow: none;
-  --menu-bar-text-shadow: none;
-  --menu-bar-icon-filter: none;
+  --menu-bar-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.26);
+  --menu-bar-icon-filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
   --menu-control-hover: rgba(0, 0, 0, 0.18);
   --menu-control-active: rgba(0, 0, 0, 0.28);
-  --menu-popover-surface: rgba(246, 248, 252, 0.62);
-  --menu-popover-ink: #20242b;
-  --menu-popover-highlight: rgba(255, 255, 255, 0.34);
-  --menu-popover-edge: rgba(255, 255, 255, 0.62);
-  --menu-popover-filter: blur(28px) saturate(160%) brightness(1.02);
-  --menu-popover-shadow: 0 24px 64px rgba(18, 27, 40, 0.24), 0 3px 14px rgba(18, 27, 40, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.72), inset 0 0 0 0.5px rgba(255, 255, 255, 0.26);
-  --menu-separator: rgba(28, 39, 52, 0.13);
-  --menu-selection: var(--system-accent);
+  --menu-popover-surface: rgba(246, 249, 250, 0.78);
+  --menu-popover-ink: #272929;
+  --menu-popover-highlight: rgba(255, 255, 255, 0.08);
+  --menu-popover-edge: rgba(0, 0, 0, 0.22);
+  --menu-popover-filter: blur(24px) saturate(130%);
+  --menu-popover-shadow: 0 10px 24px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.08), inset 0 0 0 0.5px rgba(255, 255, 255, 0.8);
+  --menu-separator: rgba(0, 0, 0, 0.12);
+  --menu-selection: #629cf8;
   --line: rgba(255, 255, 255, 0.66);
   --line-subtle: rgba(20, 67, 50, 0.12);
   --control-hover: rgba(255, 255, 255, 0.38);
@@ -175,21 +175,16 @@ a:focus-visible,
   --panel-strong: rgba(13, 29, 24, 0.94);
   --panel-soft: rgba(255, 255, 255, 0.07);
   --bar: rgba(10, 34, 27, 0.56);
-  --menu-bar-surface: rgba(0, 0, 0, 0.065);
-  --menu-bar-highlight: rgba(255, 255, 255, 0.014);
-  --menu-bar-edge: transparent;
-  --menu-bar-ink: #fff;
-  --menu-bar-shadow: none;
-  --menu-bar-text-shadow: none;
   --menu-control-hover: rgba(0, 0, 0, 0.2);
   --menu-control-active: rgba(0, 0, 0, 0.3);
-  --menu-popover-surface: rgba(18, 24, 30, 0.58);
+  --menu-popover-surface: rgba(36, 38, 40, 0.8);
   --menu-popover-ink: #f5f5f7;
-  --menu-popover-highlight: rgba(255, 255, 255, 0.1);
-  --menu-popover-edge: rgba(255, 255, 255, 0.24);
-  --menu-popover-filter: blur(30px) saturate(145%) brightness(0.95);
-  --menu-popover-shadow: 0 28px 72px rgba(0, 6, 12, 0.48), 0 3px 16px rgba(0, 6, 12, 0.28), inset 0 1px 1px rgba(255, 255, 255, 0.14), inset 0 0 0 0.5px rgba(255, 255, 255, 0.07);
+  --menu-popover-highlight: rgba(255, 255, 255, 0.025);
+  --menu-popover-edge: rgba(0, 0, 0, 0.5);
+  --menu-popover-filter: blur(24px) saturate(125%);
+  --menu-popover-shadow: 0 10px 24px rgba(0, 0, 0, 0.38), 0 1px 3px rgba(0, 0, 0, 0.16), inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
   --menu-separator: rgba(255, 255, 255, 0.12);
+  --menu-selection: #356bba;
   --line: rgba(255, 255, 255, 0.19);
   --line-subtle: rgba(255, 255, 255, 0.1);
   --control-hover: rgba(255, 255, 255, 0.11);
@@ -326,28 +321,14 @@ a:focus-visible,
   background-color: #111b35;
 }
 
-/* Preserve the light, clear material over the pale mountain sky. */
-.os-shell[data-theme="dark"][data-wallpaper="mountain"] {
-  --menu-bar-surface: rgba(244, 246, 252, 0.14);
-  --menu-bar-highlight: rgba(255, 255, 255, 0.035);
-  --menu-bar-ink: #fff;
-  --menu-control-hover: rgba(0, 0, 0, 0.18);
-  --menu-control-active: rgba(0, 0, 0, 0.28);
-}
-
 .os-shell[data-glass="clear"] {
   --panel: rgba(240, 251, 245, 0.51);
   --panel-strong: rgba(247, 253, 249, 0.78);
   --bar: rgba(238, 251, 244, 0.38);
-  --menu-bar-surface: rgba(248, 250, 252, 0.045);
-  --menu-bar-highlight: transparent;
-  --menu-bar-edge: transparent;
-  --menu-bar-filter: blur(3px) saturate(108%);
-  --menu-bar-text-shadow: none;
   --menu-control-hover: rgba(0, 0, 0, 0.16);
   --menu-control-active: rgba(0, 0, 0, 0.26);
-  --menu-popover-surface: rgba(246, 248, 252, 0.48);
-  --menu-popover-filter: blur(32px) saturate(175%) brightness(1.03);
+  --menu-popover-surface: rgba(246, 249, 250, 0.68);
+  --menu-popover-filter: blur(24px) saturate(140%);
   --card: rgba(255, 255, 255, 0.2);
   --glass-filter: blur(24px) saturate(172%);
   --glass-filter-soft: blur(18px) saturate(165%);
@@ -357,14 +338,9 @@ a:focus-visible,
   --panel: rgba(10, 35, 27, 0.52);
   --panel-strong: rgba(11, 29, 23, 0.78);
   --bar: rgba(8, 31, 24, 0.4);
-  --menu-bar-surface: rgba(0, 0, 0, 0.025);
-  --menu-popover-surface: rgba(18, 24, 30, 0.45);
-  --menu-popover-filter: blur(32px) saturate(155%) brightness(0.93);
+  --menu-popover-surface: rgba(36, 38, 40, 0.68);
+  --menu-popover-filter: blur(24px) saturate(135%);
   --card: rgba(255, 255, 255, 0.055);
-}
-
-.os-shell[data-theme="dark"][data-wallpaper="mountain"][data-glass="clear"] {
-  --menu-bar-surface: rgba(244, 246, 252, 0.1);
 }
 
 .os-shell[data-glass="readable"] {
@@ -380,7 +356,7 @@ a:focus-visible,
   --menu-bar-text-shadow: none;
   --menu-bar-icon-filter: none;
   --menu-popover-surface: rgba(249, 250, 252, 0.97);
-  --menu-popover-highlight: rgba(255, 255, 255, 0.34);
+  --menu-popover-highlight: rgba(255, 255, 255, 0.08);
   --menu-popover-filter: blur(12px) saturate(112%);
   --card: rgba(255, 255, 255, 0.78);
   --glass-filter: blur(10px) saturate(110%);
@@ -396,7 +372,7 @@ a:focus-visible,
   --menu-bar-edge: rgba(255, 255, 255, 0.2);
   --menu-bar-shadow: 0 1px 10px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.08);
   --menu-popover-surface: rgba(16, 22, 27, 0.97);
-  --menu-popover-highlight: rgba(255, 255, 255, 0.08);
+  --menu-popover-highlight: rgba(255, 255, 255, 0.025);
   --menu-popover-filter: blur(12px) saturate(108%);
   --card: rgba(255, 255, 255, 0.095);
 }
@@ -527,6 +503,31 @@ a:focus-visible,
   pointer-events: none !important;
 }
 
+.menu-bar-scrim {
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto;
+  height: calc(var(--menu-height) + 64px);
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.42),
+    rgba(0, 0, 0, 0.32) calc(var(--menu-height) * 0.7),
+    rgba(0, 0, 0, 0.14) calc(var(--menu-height) + 20px),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.os-shell[data-glass="readable"] .menu-bar-scrim {
+  display: none;
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .menu-bar-scrim {
+    display: none;
+  }
+}
+
 .menu-bar {
   position: absolute;
   z-index: 2000;
@@ -647,13 +648,15 @@ a:focus-visible,
 .menu-popover {
   position: absolute;
   z-index: 2400;
-  top: calc(var(--menu-height) + 4px);
-  width: min(15.5rem, calc(100vw - 16px));
-  padding: 6px;
+  top: calc(var(--menu-height) + 2px);
+  width: min(13rem, calc(100vw - 16px));
+  display: grid;
+  row-gap: 4px;
+  padding: 5px;
   overflow: hidden;
   isolation: isolate;
-  border: 1px solid var(--menu-popover-edge);
-  border-radius: var(--radius-popover);
+  border: 0.5px solid var(--menu-popover-edge);
+  border-radius: 13px;
   color: var(--menu-popover-ink);
   background:
     linear-gradient(180deg, var(--menu-popover-highlight), transparent 45%),
@@ -675,15 +678,14 @@ a:focus-visible,
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  padding: 0 9px;
+  column-gap: 10px;
+  padding: 3px 11px;
   border: 0;
   border-radius: 7px;
   color: inherit;
   background: transparent;
   text-align: left;
-  cursor: pointer;
-  transition: color 70ms ease, background-color 70ms ease, box-shadow 70ms ease;
+  cursor: default;
 }
 
 .menu-entry {
@@ -692,9 +694,8 @@ a:focus-visible,
 
 .menu-separator {
   height: 1px;
-  margin: 4px 8px;
+  margin: 5px 11px;
   background: var(--menu-separator);
-  box-shadow: 0 1px rgba(255, 255, 255, 0.24);
 }
 
 .menu-item-icon {
@@ -702,7 +703,11 @@ a:focus-visible,
   height: 18px;
   display: grid;
   place-items: center;
-  opacity: 0.86;
+  opacity: 1;
+}
+
+.menu-item-icon svg {
+  display: block;
 }
 
 .menu-item-label {
@@ -716,7 +721,13 @@ a:focus-visible,
 .menu-popover button:focus-visible {
   color: #fff;
   background: var(--menu-selection);
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.24), 0 1px 4px rgba(0, 74, 173, 0.28);
+  box-shadow: none;
+  outline: none;
+}
+
+.menu-popover button:is(:hover, :focus-visible) kbd,
+.menu-popover button:is(:hover, :focus-visible) .menu-item-icon {
+  opacity: 1;
 }
 
 .menu-popover button:disabled {
@@ -744,8 +755,7 @@ a:focus-visible,
   min-height: 0;
 }
 
-.app-tile,
-.search-app-icon {
+.app-tile {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -766,7 +776,7 @@ a:focus-visible,
 .window-layer {
   position: absolute;
   z-index: 30;
-  inset: 0 0 92px;
+  inset: 0 0 calc(var(--dock-icon-size) + 43px);
   min-width: 0;
   min-height: 0;
   pointer-events: none;
@@ -1730,6 +1740,99 @@ a:focus-visible,
   gap: 28px;
 }
 
+.setting-toggle-row,
+.setting-size-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px;
+  border: 1px solid var(--line-subtle);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+
+.setting-size-row {
+  display: grid;
+  justify-content: normal;
+  gap: 10px;
+}
+
+.setting-size-heading,
+.setting-size-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.setting-size-heading label {
+  font-size: var(--type-body);
+  font-weight: var(--weight-medium);
+}
+
+.setting-size-heading output,
+.setting-size-control > span {
+  color: var(--muted);
+  font-size: var(--type-callout);
+  font-variant-numeric: tabular-nums;
+}
+
+.setting-size-control input {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.setting-toggle-row strong,
+.setting-toggle-row small {
+  display: block;
+}
+
+.setting-toggle-row strong {
+  font-size: var(--type-body);
+  font-weight: var(--weight-medium);
+}
+
+.setting-toggle-row small {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: var(--type-callout);
+}
+
+.setting-switch {
+  width: 38px;
+  height: 23px;
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 999px;
+  background: rgba(100, 112, 120, 0.3);
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.setting-switch > span {
+  display: block;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.setting-switch[aria-checked="true"] {
+  background: var(--accent);
+}
+
+.setting-switch[aria-checked="true"] > span {
+  transform: translateX(15px);
+}
+
 .setting-group {
   min-width: 0;
   margin: 0;
@@ -2178,44 +2281,61 @@ a:focus-visible,
   display: grid;
   place-items: start center;
   padding: max(12vh, calc(var(--menu-height) + 34px)) 14px 20px;
-  background: rgba(2, 18, 13, 0.29);
-  -webkit-backdrop-filter: blur(9px) saturate(105%);
-  backdrop-filter: blur(9px) saturate(105%);
+  /* Keep this layer unfiltered so the panel can sample the desktop itself. */
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .spotlight {
+  --search-surface: rgba(246, 250, 255, 0.52);
+  --search-highlight: rgba(255, 255, 255, 0.16);
+  --search-rim: rgba(255, 255, 255, 0.78);
+  --search-edge: rgba(25, 36, 48, 0.24);
+  --search-filter: blur(28px) saturate(145%);
+  --search-shadow: 0 24px 72px rgba(7, 20, 36, 0.24), 0 5px 18px rgba(7, 20, 36, 0.14);
+  --search-selection: rgba(255, 255, 255, 0.3);
+  --search-selection-edge: rgba(255, 255, 255, 0.5);
   position: relative;
-  width: min(620px, 100%);
-  max-height: min(69vh, 520px);
+  width: min(600px, 100%);
+  max-height: min(580px, calc(100dvh - max(12vh, calc(var(--menu-height) + 34px)) - 20px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  color: var(--ink);
-  background: var(--panel-strong);
-  box-shadow: 0 36px 100px rgba(0, 27, 18, 0.36), inset 0 1px rgba(255, 255, 255, 0.58);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
+  border: 0.5px solid var(--search-edge);
+  border-radius: 24px;
+  color: var(--menu-popover-ink);
+  background:
+    linear-gradient(165deg, var(--search-highlight), transparent 55%),
+    var(--search-surface);
+  box-shadow: var(--search-shadow), inset 0 1px 0 var(--search-rim), inset 0 0 0 0.5px var(--search-rim);
+  -webkit-backdrop-filter: var(--search-filter);
+  backdrop-filter: var(--search-filter);
   animation: spotlight-in 190ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.spotlight::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 1px;
-  border-radius: 20px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.24), transparent 24%),
-    linear-gradient(315deg, rgba(255, 255, 255, 0.09), transparent 28%);
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.34), inset 1px 0 rgba(255, 255, 255, 0.11);
-  pointer-events: none;
+.os-shell[data-glass="clear"] .spotlight {
+  --search-surface: rgba(246, 250, 255, 0.36);
 }
 
-.spotlight > * {
-  position: relative;
-  z-index: 1;
+.os-shell[data-theme="dark"] .spotlight {
+  --search-surface: rgba(28, 34, 43, 0.6);
+  --search-highlight: rgba(255, 255, 255, 0.045);
+  --search-rim: rgba(255, 255, 255, 0.2);
+  --search-edge: rgba(0, 0, 0, 0.5);
+  --search-filter: blur(28px) saturate(125%);
+  --search-shadow: 0 24px 72px rgba(0, 0, 0, 0.4), 0 5px 18px rgba(0, 0, 0, 0.24);
+  --search-selection: rgba(255, 255, 255, 0.1);
+  --search-selection-edge: rgba(255, 255, 255, 0.08);
+}
+
+.os-shell[data-theme="dark"][data-glass="clear"] .spotlight {
+  --search-surface: rgba(28, 34, 43, 0.44);
+}
+
+.os-shell[data-glass="readable"] .spotlight {
+  --search-surface: var(--menu-popover-surface);
+  --search-filter: none;
+  --search-selection: rgba(100, 120, 145, 0.14);
+  --search-selection-edge: var(--menu-separator);
 }
 
 @keyframes spotlight-in {
@@ -2224,45 +2344,58 @@ a:focus-visible,
 }
 
 .spotlight-input {
-  flex: 0 0 65px;
+  position: relative;
+  flex: 0 0 76px;
   min-width: 0;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 13px;
-  padding: 0 18px;
-  border-bottom: 1px solid var(--line-subtle);
-  font-size: 1.55rem;
+  gap: 14px;
+  padding: 0 24px;
+}
+
+.spotlight-input::after {
+  content: "";
+  position: absolute;
+  inset: auto 24px 0;
+  height: 1px;
+  background: var(--menu-separator);
+}
+
+.spotlight-input > span {
+  display: grid;
+  place-items: center;
+  opacity: 0.72;
 }
 
 .spotlight-input input {
   min-width: 0;
-  height: 46px;
+  height: 52px;
   padding: 0;
   border: 0;
   outline: 0;
   color: inherit;
   background: transparent;
-  font-size: 1.05rem;
 }
 
 .spotlight-input input::placeholder {
-  color: var(--soft-ink);
-  opacity: 0.8;
+  color: inherit;
+  opacity: 0.48;
 }
 
 .spotlight-input kbd {
-  padding: 4px 6px;
-  border: 1px solid var(--line-subtle);
-  border-radius: 6px;
-  background: var(--card);
+  padding: 4px 0 4px 6px;
+  border: 0;
+  background: transparent;
   font-size: 0.625rem;
 }
 
 .spotlight-results {
   min-height: 0;
+  display: grid;
+  gap: 6px;
   overflow: auto;
-  padding: 7px;
+  padding: 12px;
 }
 
 .spotlight-results > button {
@@ -2270,33 +2403,38 @@ a:focus-visible,
   min-width: 0;
   min-height: 56px;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  padding: 7px 10px 7px 7px;
+  gap: 14px;
+  padding: 9px 12px;
   border: 0;
-  border-radius: 13px;
+  border-radius: 12px;
   color: inherit;
   background: transparent;
   text-align: left;
-  cursor: pointer;
-  transition: background-color 150ms ease, transform 150ms ease;
+  cursor: default;
 }
 
 .spotlight-results > button:hover,
-.spotlight-results > button:focus-visible {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+.spotlight-results > button:focus-visible,
+.spotlight-results > button.is-selected {
+  background: var(--search-selection);
+  box-shadow: inset 0 0 0 0.5px var(--search-selection-edge);
+  outline: none;
 }
 
-.spotlight-results > button:active {
-  transform: scale(0.992);
+.spotlight-results > button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
 }
 
 .search-app-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  font-size: 1.05rem;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  color: inherit;
+  opacity: 0.76;
 }
 
 .spotlight-results > button > span:nth-child(2) {
@@ -2310,29 +2448,34 @@ a:focus-visible,
 
 .spotlight-results strong {
   overflow: hidden;
-  font-size: 0.8125rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .spotlight-results small {
-  margin-top: 3px;
+  margin-top: 4px;
   overflow: hidden;
-  color: var(--muted);
-  font-size: 0.6875rem;
+  color: inherit;
+  opacity: 0.72;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .spotlight-results i {
-  color: var(--soft-ink);
+  color: inherit;
   font-style: normal;
+  opacity: 0;
+}
+
+.spotlight-results > button.is-selected i {
+  opacity: 0.6;
 }
 
 .spotlight-results > p {
   margin: 0;
   padding: 32px 16px;
-  color: var(--muted);
+  color: inherit;
+  opacity: 0.7;
   text-align: center;
   font-size: 0.8125rem;
 }
@@ -2389,6 +2532,19 @@ a:focus-visible,
   background: rgba(255, 255, 255, 0.022);
 }
 
+.os-shell[data-dock-glass="false"][data-theme] .dock {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.os-shell[data-dock-glass="false"] .dock::before,
+.os-shell[data-dock-glass="false"] .liquid-canvas-host {
+  display: none;
+}
+
 .dock:not(.is-magnifying) {
   transition-duration: 220ms, 180ms, 180ms;
 }
@@ -2408,7 +2564,7 @@ a:focus-visible,
   --dock-scale: 1;
   --dock-shift: 0px;
   --dock-label-scale: 1;
-  --dock-label-bottom: 59px;
+  --dock-label-bottom: calc(var(--dock-icon-size) + 10px);
   --dock-layer: 1;
   position: relative;
   z-index: var(--dock-layer);
@@ -2481,33 +2637,36 @@ a:focus-visible,
   .dock-character-art,
   .dock-contact-art {
     --dock-art-optical-scale: 1;
-    width: 48px;
-    height: 48px;
+    --dock-art-offset-x: 0%;
+    width: calc(var(--dock-icon-size) * 48 / 49);
+    height: calc(var(--dock-icon-size) * 48 / 49);
     display: block;
     place-self: center;
-    filter: drop-shadow(0 2px 2px rgba(3, 20, 14, 0.2));
-    transform: scale(var(--dock-art-optical-scale));
-    transform-origin: center;
+    filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.12));
+    transform: translateX(var(--dock-art-offset-x)) scale(var(--dock-art-optical-scale));
+    transform-origin: 50% 85%;
     pointer-events: none;
     user-select: none;
   }
 
   .dock-character-art {
-    --dock-art-optical-scale: 1.1;
+    /* Narrow silhouettes need more height to carry the same visual weight. */
+    --dock-art-optical-scale: 1.18;
     background: url("/icons/about-character.png") center / contain no-repeat;
   }
 
   .dock-welcome-art {
+    --dock-art-offset-x: 3%;
     background: url("/icons/welcome-finder.png") center / contain no-repeat;
   }
 
   .dock-works-art {
-    --dock-art-optical-scale: 0.88;
+    --dock-art-optical-scale: 0.84;
     background: url("/icons/works-folder.png") center / contain no-repeat;
   }
 
   .dock-contact-art {
-    --dock-art-optical-scale: 0.95;
+    --dock-art-optical-scale: 0.93;
     background: url("/icons/contact-bubble.png") center / contain no-repeat;
   }
 
@@ -2521,7 +2680,7 @@ a:focus-visible,
     --dock-scale: 1.28;
     --dock-shift: 0px;
     --dock-label-scale: 0.78125;
-    --dock-label-bottom: 56.81px;
+    --dock-label-bottom: calc(var(--dock-icon-size) + 7.8125px);
     --dock-layer: 10;
   }
 }
@@ -2536,13 +2695,11 @@ a:focus-visible,
   max-width: 11rem;
   padding: 4px 9px;
   overflow: visible;
-  border: 0.5px solid var(--line);
+  border: 0;
   border-radius: 6px;
   color: var(--ink);
-  background: var(--panel-strong);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  backdrop-filter: blur(18px) saturate(140%);
-  box-shadow: 0 6px 18px rgba(3, 20, 15, 0.22), 0 1px 2px rgba(3, 20, 15, 0.14), inset 0 0.5px rgba(255, 255, 255, 0.42);
+  background: transparent;
+  box-shadow: 0 6px 18px rgba(3, 20, 15, 0.22), 0 1px 2px rgba(3, 20, 15, 0.14);
   font-size: 0.6875rem;
   font-weight: var(--weight-medium);
   white-space: nowrap;
@@ -2556,33 +2713,20 @@ a:focus-visible,
 }
 
 .dock-app small::before,
-.dock-app small::after,
-.minimized-window small::before,
-.minimized-window small::after {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  content: "";
-  pointer-events: none;
-}
-
-.dock-app small::before,
 .minimized-window small::before {
-  margin-left: -5px;
-  border-top: 6px solid var(--line);
-  border-right: 5px solid transparent;
-  border-left: 5px solid transparent;
-}
-
-.dock-app small::after,
-.minimized-window small::after {
-  top: calc(100% - 1px);
-  margin-left: -4px;
-  border-top: 5px solid var(--panel-strong);
-  border-right: 4px solid transparent;
-  border-left: 4px solid transparent;
+  /* A single path avoids antialiasing seams between adjacent mask tiles. */
+  --tooltip-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30' preserveAspectRatio='none'%3E%3Cpath d='M6 0H54Q60 0 60 6V18Q60 24 54 24H35L30 30L25 24H6Q0 24 0 18V6Q0 0 6 0Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 -6px;
+  content: "";
+  background: var(--panel-strong);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-mask: var(--tooltip-shape);
+  mask: var(--tooltip-shape);
+  box-shadow: inset 0 0.5px rgba(255, 255, 255, 0.42);
+  pointer-events: none;
 }
 
 .dock-app:hover small,
@@ -2612,11 +2756,12 @@ a:focus-visible,
 .dock-divider {
   --dock-shift: 0px;
   width: 1px;
-  height: 34px;
+  height: calc(var(--dock-icon-size) * 34 / 49);
   align-self: center;
   flex: 0 0 auto;
   margin: 0 1px;
-  background: var(--line-subtle);
+  background: var(--ink);
+  opacity: 0.28;
   transform: translateX(var(--dock-shift));
   transition: transform 110ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
@@ -2626,6 +2771,45 @@ a:focus-visible,
   transition-duration: 220ms;
 }
 
+/* Pointer motion is integrated once per frame; don't ease those values again. */
+.dock.is-magnifying {
+  transition-property: box-shadow, background-color;
+  transition-duration: 180ms;
+}
+
+.dock.is-magnifying .dock-magnify-item {
+  transition: filter 140ms ease, box-shadow 140ms ease;
+}
+
+.dock.is-magnifying .dock-divider {
+  transition: none;
+}
+
+.dock.is-magnifying .dock-magnify-item small {
+  transition: opacity 110ms ease, translate 110ms ease-out, visibility 0ms linear 110ms;
+}
+
+.dock.is-magnifying .dock-magnify-item:is(:hover, :focus-visible) small {
+  transition-delay: 0ms;
+}
+
+/* Keep floating icons defined without a broad, dark halo. */
+.os-shell[data-dock-glass="false"] .dock :is(.dock-welcome-art, .dock-works-art, .dock-character-art, .dock-contact-art, .dock-trash-art) {
+  filter: drop-shadow(0 0.5px 0 rgba(255, 255, 255, 0.18))
+    drop-shadow(0 2px 2px rgba(0, 0, 0, 0.16));
+}
+
+.os-shell[data-dock-glass="false"] .dock-divider {
+  opacity: 1;
+  background: rgba(20, 26, 31, 0.38);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.42);
+}
+
+.os-shell[data-dock-glass="false"] .running-dot {
+  background: rgba(20, 26, 31, 0.85);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.75), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
 .minimized-window {
   overflow: visible;
   color: var(--ink);
@@ -2633,8 +2817,8 @@ a:focus-visible,
 }
 
 .minimized-window > span {
-  width: 34px;
-  height: 27px;
+  width: calc(var(--dock-icon-size) * 34 / 49);
+  height: calc(var(--dock-icon-size) * 27 / 49);
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -2649,6 +2833,11 @@ a:focus-visible,
 .dock-trash {
   color: #294f43;
   background: linear-gradient(145deg, #eff7f3, #90aaa0 78%);
+}
+
+.minimized-window > span svg {
+  width: calc(var(--dock-icon-size) * 16 / 49);
+  height: calc(var(--dock-icon-size) * 16 / 49);
 }
 
 .os-shell[data-theme="dark"] .dock-trash {
@@ -2674,14 +2863,15 @@ a:focus-visible,
   }
 
   .dock-trash-art {
-    width: 48px;
-    height: 48px;
+    --dock-art-optical-scale: 0.98;
+    width: calc(var(--dock-icon-size) * 48 / 49);
+    height: calc(var(--dock-icon-size) * 48 / 49);
     display: block;
     place-self: center;
     background: url("/icons/trash-wireframes.png") center / contain no-repeat;
-    filter: drop-shadow(0 2px 2px rgba(3, 20, 14, 0.22));
-    transform: scale(0.98);
-    transform-origin: center;
+    filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.12));
+    transform: scale(var(--dock-art-optical-scale));
+    transform-origin: 50% 85%;
     pointer-events: none;
     user-select: none;
   }
@@ -2700,7 +2890,7 @@ a:focus-visible,
 
 @media (max-height: 620px) {
   .window-layer {
-    bottom: 70px;
+    bottom: calc(var(--dock-icon-size) * 0.88 + 27px);
   }
 
   .dock {
@@ -2857,9 +3047,50 @@ a:focus-visible,
     height: 7px;
     bottom: -9px;
   }
+
+  .os-shell .spotlight,
+  .os-shell[data-theme][data-glass] .spotlight {
+    --search-surface: var(--menu-popover-surface);
+    --search-highlight: transparent;
+    --search-edge: var(--menu-popover-edge);
+    --search-filter: none;
+    --search-selection: var(--menu-selection);
+    --search-selection-edge: transparent;
+  }
+
+  .spotlight-results > button:is(:hover, :focus-visible, .is-selected) {
+    color: #fff;
+  }
+
+  .spotlight-results small,
+  .search-app-icon {
+    opacity: 1;
+  }
 }
 
 @media (forced-colors: active) {
+  .os-shell[data-dock-glass="false"] .dock .dock-app {
+    border: 1px solid ButtonText;
+  }
+
+  .os-shell[data-dock-glass="false"] .dock-divider {
+    background: CanvasText;
+    box-shadow: none;
+  }
+
+  .setting-switch {
+    border-color: ButtonText;
+    background: Canvas;
+  }
+
+  .setting-switch[aria-checked="true"] {
+    background: Highlight;
+  }
+
+  .setting-switch > span {
+    background: ButtonText;
+  }
+
   .os-shell,
   .menu-bar,
   .dock,
@@ -2872,7 +3103,8 @@ a:focus-visible,
   }
 
   .menu-bar,
-  .menu-popover {
+  .menu-popover,
+  .spotlight {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     box-shadow: none;
@@ -2888,8 +3120,26 @@ a:focus-visible,
     box-shadow: none;
   }
 
+  .spotlight-results > button:is(:hover, :focus-visible, .is-selected) {
+    color: HighlightText;
+    background: Highlight;
+    box-shadow: none;
+  }
+
+  .dock-app small,
+  .minimized-window small {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
+
+  .dock-app small::before,
+  .minimized-window small::before {
+    display: none;
+  }
+
   .app-tile,
-  .search-app-icon,
   .dock-app,
   .contact-orb,
   .profile-mark,
@@ -2942,7 +3192,7 @@ a:focus-visible,
   font-size: var(--type-body);
   font-weight: var(--weight-regular);
   line-height: var(--leading-body);
-  opacity: 0.62;
+  opacity: 0.34;
 }
 
 .spotlight kbd {
@@ -3256,32 +3506,27 @@ a:focus-visible,
 }
 
 .spotlight-input {
-  font-size: var(--type-title-2);
-  line-height: var(--leading-title-2);
+  font-size: var(--type-title-1);
+  line-height: var(--leading-title-1);
 }
 
 .spotlight-input input {
-  font-size: var(--type-title-2);
+  font-size: clamp(1rem, 3.8vw, var(--type-title-1));
   font-weight: var(--weight-regular);
-  line-height: var(--leading-title-2);
-}
-
-.spotlight-results > button.is-selected,
-.spotlight-results > button[aria-selected="true"] {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  line-height: var(--leading-title-1);
 }
 
 .spotlight-results strong,
 .spotlight-results > p {
-  font-size: var(--type-body);
+  font-size: var(--type-title-3);
   font-weight: var(--weight-medium);
-  line-height: var(--leading-body);
+  line-height: var(--leading-title-3);
 }
 
 .spotlight-results small {
-  font-size: var(--type-subheadline);
+  font-size: var(--type-callout);
   font-weight: var(--weight-regular);
-  line-height: var(--leading-subheadline);
+  line-height: var(--leading-callout);
 }
 
 .dock-app,

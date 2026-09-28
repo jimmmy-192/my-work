@@ -7,6 +7,7 @@ import type { LiquidGLFactory, LiquidGLLens } from "liquid-gl";
 export type OpticalGlassPreference = "clear" | "standard" | "readable";
 
 export interface OpticalGlassEnvironment {
+  enabled: boolean;
   preferencesReady: boolean;
   glass: OpticalGlassPreference;
   mobile: boolean;
@@ -20,6 +21,9 @@ export interface OpticalGlassEnvironment {
 interface LiquidGLRenderer {
   canvas: HTMLCanvasElement;
   captureSnapshot?: () => Promise<unknown> | unknown;
+  // liquid-gl 2.0.1 exposes its ticker on the shared renderer.
+  _rafId?: number | null;
+  render?: () => void;
 }
 
 interface MyOSLiquidRuntime {
@@ -40,6 +44,7 @@ declare global {
 }
 
 interface UseLiquidGlassOptions {
+  enabled: boolean;
   rootRef: RefObject<HTMLElement | null>;
   canvasHostRef: RefObject<HTMLDivElement | null>;
   targetRef: RefObject<HTMLSpanElement | null>;
@@ -54,6 +59,7 @@ let cachedWebGLSupport: boolean | undefined;
 
 export function shouldUseOpticalGlass(environment: OpticalGlassEnvironment) {
   return (
+    environment.enabled &&
     environment.preferencesReady &&
     environment.glass !== "readable" &&
     !environment.mobile &&
@@ -80,12 +86,25 @@ function setFallback(root: HTMLElement) {
   root.dataset.liquidWebgl = "off";
   const canvas = window.__myOSLiquidRuntime__?.canvas;
   if (canvas) canvas.style.display = "none";
+  const renderer = window.__myOSLiquidRuntime__?.renderer;
+  if (renderer?._rafId) {
+    window.cancelAnimationFrame(renderer._rafId);
+    renderer._rafId = null;
+  }
 }
 
 function setReady(root: HTMLElement, runtime: MyOSLiquidRuntime) {
   if (!runtime.canvas) return;
   runtime.canvas.style.display = "block";
   root.dataset.liquidWebgl = "ready";
+  const renderer = runtime.renderer;
+  if (renderer?.render && !renderer._rafId) {
+    const renderFrame = () => {
+      renderer.render?.();
+      renderer._rafId = window.requestAnimationFrame(renderFrame);
+    };
+    renderer._rafId = window.requestAnimationFrame(renderFrame);
+  }
 }
 
 function markRuntimeFailed(root: HTMLElement, runtime: MyOSLiquidRuntime) {
@@ -176,6 +195,7 @@ async function initializeLiquidGlass(
 }
 
 export function useLiquidGlass({
+  enabled,
   rootRef,
   canvasHostRef,
   targetRef,
@@ -200,7 +220,9 @@ export function useLiquidGlass({
     let captureTimer: number | undefined;
 
     const eligible = () =>
+      enabled &&
       shouldUseOpticalGlass({
+        enabled,
         preferencesReady,
         glass,
         mobile: mobile.matches,
@@ -246,7 +268,11 @@ export function useLiquidGlass({
       setFallback(root);
       startTimer = window.setTimeout(() => {
         void initializeLiquidGlass(root, host, target).then((initializedRuntime) => {
-          if (cancelled || !eligible() || initializedRuntime.status !== "ready") {
+          if (cancelled) {
+            if (root.dataset.dockGlass === "false") setFallback(root);
+            return;
+          }
+          if (!eligible() || initializedRuntime.status !== "ready") {
             setFallback(root);
             return;
           }
@@ -264,5 +290,5 @@ export function useLiquidGlass({
       if (captureTimer !== undefined) window.clearTimeout(captureTimer);
       queries.forEach((query) => query.removeEventListener("change", sync));
     };
-  }, [canvasHostRef, glass, preferencesReady, rootRef, sceneKey, targetRef]);
+  }, [canvasHostRef, enabled, glass, preferencesReady, rootRef, sceneKey, targetRef]);
 }

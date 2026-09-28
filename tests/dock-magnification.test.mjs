@@ -3,8 +3,11 @@ import test from "node:test";
 
 import {
   DOCK_MAGNIFICATION_RADIUS,
+  DOCK_ICON_SIZE,
   DOCK_MAX_SCALE,
+  advanceDockMotion,
   getDockMagnification,
+  getDockMagnificationForProximity,
 } from "../app/os/dock-magnification.ts";
 
 test("peaks under the pointer and keeps the tooltip visually stable", () => {
@@ -12,7 +15,7 @@ test("peaks under the pointer and keeps the tooltip visually stable", () => {
 
   assert.equal(center.scale, DOCK_MAX_SCALE);
   assert.equal(center.proximity, 1);
-  assert.ok(center.expansion > 44 && center.expansion < 45);
+  assert.ok(Math.abs(center.expansion - DOCK_ICON_SIZE * (DOCK_MAX_SCALE - 1)) < 0.000001);
   assert.ok(Math.abs(center.labelScale * center.scale - 1) < 0.000001);
 });
 
@@ -35,4 +38,37 @@ test("returns to the resting state outside the active radius", () => {
   assert.equal(edge.scale, 1);
   assert.equal(edge.expansion, 0);
   assert.equal(edge.proximity, 0);
+});
+
+test("motion feels the same at 60 Hz and 120 Hz", () => {
+  const sample = (fps) => {
+    let motion = { value: 0, velocity: 0 };
+    for (let frame = 0; frame < fps / 5; frame++) {
+      motion = advanceDockMotion(motion, 1, 1 / fps);
+    }
+    return motion;
+  };
+  const standard = sample(60);
+  const highRefresh = sample(120);
+  assert.ok(standard.value > 0.96 && standard.value < 1);
+  assert.ok(Math.abs(standard.value - highRefresh.value) < 1e-10);
+  assert.ok(Math.abs(standard.velocity - highRefresh.velocity) < 1e-10);
+});
+
+test("quick departure and reentry retain continuity and settle exactly", () => {
+  let motion = { value: 0, velocity: 0 };
+  for (const target of [1, 0, 0.75, 0, 1, 0.3]) {
+    for (let frame = 0; frame < 5; frame++) {
+      const next = advanceDockMotion(motion, target, 1 / 60, target === 0);
+      assert.ok(Math.abs(next.value - motion.value) < 0.2);
+      assert.ok(next.value >= 0 && next.value <= 1);
+      const geometry = getDockMagnificationForProximity(next.value);
+      assert.ok(Math.abs(geometry.scale * geometry.labelScale - 1) < 1e-10);
+      motion = next;
+    }
+  }
+  for (let frame = 0; frame < 120; frame++) {
+    motion = advanceDockMotion(motion, 0, 1 / 60, true);
+  }
+  assert.deepEqual(motion, { value: 0, velocity: 0 });
 });

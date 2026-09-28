@@ -9,15 +9,15 @@ const icons = readFileSync(new URL("../app/os/icons.tsx", import.meta.url), "utf
 test("uses a single AppKit-aligned control scale", () => {
   assert.match(css, /--menu-height:\s*calc\(28px \+ env\(safe-area-inset-top\)\)/);
   assert.match(css, /--menu-control-height:\s*24px/);
-  assert.match(css, /--menu-item-height:\s*28px/);
+  assert.match(css, /--menu-item-height:\s*24px/);
   assert.match(css, /--window-titlebar-height:\s*28px/);
-  assert.match(css, /--dock-icon-size:\s*49px/);
+  assert.match(css, /--dock-icon-size:\s*min\(var\(--dock-size, 56px\), calc\(/);
 });
 
 test("keeps system focus and menu selection in the macOS accent family", () => {
   assert.match(css, /--system-accent:\s*#0a84ff/);
   assert.match(css, /--focus:\s*#0066cc/);
-  assert.match(css, /--menu-selection:\s*var\(--system-accent\)/);
+  assert.match(css, /--menu-selection:\s*#629cf8/);
 });
 
 test("uses one aligned symbol column in command menus", () => {
@@ -27,7 +27,8 @@ test("uses one aligned symbol column in command menus", () => {
 
 test("uses white menu-bar content and pill-shaped top-level controls", () => {
   assert.match(css, /--menu-bar-ink:\s*#fff/);
-  assert.match(css, /--menu-bar-text-shadow:\s*none/);
+  assert.match(css, /--menu-bar-surface:\s*transparent/);
+  assert.match(css, /--menu-bar-filter:\s*none/);
   assert.match(css, /--menu-control-hover:\s*rgba\(0, 0, 0,/);
   assert.match(css, /--menu-control-active:\s*rgba\(0, 0, 0,/);
   assert.match(css, /\.menu-bar button \{[\s\S]*?border-radius:\s*999px/);

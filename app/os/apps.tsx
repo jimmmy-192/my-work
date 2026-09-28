@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { portfolioContent } from "../../content/portfolio";
 import { AppIcon, SystemIcon } from "./icons";
+import { DOCK_MIN_SIZE, DOCK_MAX_SIZE } from "./dock-magnification";
 import type {
   CloudAccount,
   CloudSyncStatus,
@@ -19,6 +20,10 @@ interface AppContentProps {
   setTheme: (theme: ThemePreference) => void;
   glass: GlassPreference;
   setGlass: (glass: GlassPreference) => void;
+  dockGlass: boolean;
+  setDockGlass: (enabled: boolean) => void;
+  dockSize: number;
+  setDockSize: (size: number) => void;
   wallpaper: WallpaperPreference;
   setWallpaper: (wallpaper: WallpaperPreference) => void;
   wallpaperPhotos: WallpaperPhoto[];
@@ -357,6 +362,10 @@ function SettingsApp({
   setTheme,
   glass,
   setGlass,
+  dockGlass,
+  setDockGlass,
+  dockSize,
+  setDockSize,
   wallpaperPhotos,
   addWallpaperPhotos,
   removeWallpaperPhoto,
@@ -414,6 +423,32 @@ function SettingsApp({
       <form className="settings-form" onSubmit={(event) => event.preventDefault()}>
         <WallpaperGroup photos={wallpaperPhotos} onAdd={addWallpaperPhotos} onRemove={removeWallpaperPhoto} onReorder={reorderWallpaperPhotos} />
         <ChoiceGroup label="主题" value={theme} options={themeOptions} onChange={setTheme} />
+        <div className="setting-size-row">
+          <div className="setting-size-heading">
+            <label htmlFor="dock-size">Dock 大小</label>
+            <output htmlFor="dock-size">{dockSize}</output>
+          </div>
+          <div className="setting-size-control">
+            <span aria-hidden="true">小</span>
+            <input id="dock-size" type="range" min={DOCK_MIN_SIZE} max={DOCK_MAX_SIZE} step="1" value={dockSize} aria-valuetext={`${dockSize} 像素`} onChange={(event) => setDockSize(Number(event.target.value))} />
+            <span aria-hidden="true">大</span>
+          </div>
+        </div>
+        <div className="setting-toggle-row">
+          <span>
+            <strong id="dock-glass-label">Dock 玻璃</strong>
+            <small id="dock-glass-description">{dockGlass ? "透明玻璃底座承托图标" : "图标直接悬浮在桌面上"}</small>
+          </span>
+          <button
+            type="button"
+            className="setting-switch"
+            role="switch"
+            aria-checked={dockGlass}
+            aria-labelledby="dock-glass-label"
+            aria-describedby="dock-glass-description"
+            onClick={() => setDockGlass(!dockGlass)}
+          ><span aria-hidden="true" /></button>
+        </div>
         <ChoiceGroup label="玻璃效果" value={glass} options={glassOptions} onChange={setGlass} />
       </form>
       <p className="settings-footnote">MyOS 也会遵循设备的“减少动态效果”和“增加对比度”辅助功能设置。</p>
@@ -462,6 +497,10 @@ export function AppContent(props: AppContentProps) {
           setTheme={props.setTheme}
           glass={props.glass}
           setGlass={props.setGlass}
+          dockGlass={props.dockGlass}
+          setDockGlass={props.setDockGlass}
+          dockSize={props.dockSize}
+          setDockSize={props.setDockSize}
           wallpaper={props.wallpaper}
           setWallpaper={props.setWallpaper}
           wallpaperPhotos={props.wallpaperPhotos}

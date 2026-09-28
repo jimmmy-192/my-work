@@ -31,8 +31,9 @@ import type {
   PreferenceSnapshot,
   ThemePreference,
 } from "./cloud-preferences";
-import { getDockMagnification } from "./dock-magnification";
-import { AppIcon, SystemIcon } from "./icons";
+import { DOCK_ICON_SIZE, DOCK_MIN_SIZE, DOCK_MAX_SIZE, advanceDockMotion, getDockMagnification, getDockMagnificationForProximity } from "./dock-magnification";
+import type { DockMotion } from "./dock-magnification";
+import { AppIcon, MenuAppIcon, SystemIcon } from "./icons";
 import type { SystemIconName } from "./icons";
 import {
   isWallpaperPreference,
@@ -82,17 +83,22 @@ interface MenuItem {
 interface DockRestingItem {
   element: HTMLElement;
   center: number;
+  size: number;
   magnifies: boolean;
+  motion: DockMotion;
 }
 
 const DEFAULT_WORKSPACE: Bounds = { x: 8, y: 8, width: 1180, height: 690 };
 const THEME_KEY = "myos-theme";
 const GLASS_KEY = "myos-glass";
+const DOCK_GLASS_KEY = "myos-dock-glass";
+const DOCK_SIZE_KEY = "myos-dock-size";
 const WALLPAPER_KEY = "myos-wallpaper-v2";
 const LEGACY_WALLPAPER_KEY = "myos-wallpaper";
 const CUSTOM_WALLPAPERS_KEY = "myos-custom-wallpapers-v1";
 const WALLPAPER_ORDER_KEY = "myos-wallpaper-order-v1";
 const MENU_ORDER = ["myos", "go", "window", "help"] as const;
+const DOCK_APPS = appDefinitions.filter((app) => app.dock);
 type MenuId = (typeof MENU_ORDER)[number];
 const MENU_LABELS: Record<MenuId, string> = {
   myos: "MyOS 菜单",
@@ -157,6 +163,8 @@ export function PortfolioOS() {
   const [clock, setClock] = useState("");
   const [theme, setTheme] = useState<ThemePreference>("system");
   const [glass, setGlass] = useState<GlassPreference>("standard");
+  const [dockGlass, setDockGlass] = useState(false);
+  const [dockSize, setDockSize] = useState(DOCK_ICON_SIZE);
   const [wallpaper, setWallpaper] = useState<WallpaperPreference>("mountain");
   const [photoCarouselReady, setPhotoCarouselReady] = useState(false);
   const [photoSlideIndex, setPhotoSlideIndex] = useState(0);
@@ -192,6 +200,7 @@ export function PortfolioOS() {
   const gestureRef = useRef<PointerGesture | null>(null);
   const dockPointerXRef = useRef<number | null>(null);
   const dockAnimationFrameRef = useRef<number | null>(null);
+  const dockLastFrameTimeRef = useRef<number | null>(null);
   const dockRestingItemsRef = useRef<DockRestingItem[]>([]);
   const initializationStartedRef = useRef(false);
   const uploadingWallpaperIdsRef = useRef(new Set<string>());
@@ -203,6 +212,10 @@ export function PortfolioOS() {
   const resolvedTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
   const activeAppId = state.activeWindowId;
   const activeApp = activeAppId ? definitions.get(activeAppId) : undefined;
+  const minimizedDockIds = Object.values(state.windows)
+    .filter((windowState) => windowState?.status === "minimized")
+    .map((windowState) => windowState?.appId)
+    .join(",");
   const photoWallpapers = useMemo(() => {
     const all: WallpaperPhoto[] = [...PHOTO_WALLPAPERS, ...customWallpaperPhotos];
     const byId = new Map(all.map((photo) => [photo.id, photo]));
@@ -231,6 +244,7 @@ export function PortfolioOS() {
     rootRef: osShellRef,
     canvasHostRef: liquidCanvasHostRef,
     targetRef: dockLiquidTargetRef,
+    enabled: dockGlass,
     preferencesReady: preferencesReady && (wallpaper !== "mountain" || photoCarouselReady),
     glass,
     sceneKey: `${resolvedTheme}:${glass}:${wallpaper}:${displayedPhotoSlideIndex}`,
@@ -323,6 +337,7 @@ export function PortfolioOS() {
       dockAnimationFrameRef.current = null;
     }
     dockPointerXRef.current = null;
+    dockLastFrameTimeRef.current = null;
     dockRestingItemsRef.current = [];
 
     const dock = dockRef.current;
@@ -338,18 +353,24 @@ export function PortfolioOS() {
     });
   }, []);
 
-  const updateDockMagnification = useCallback(() => {
+  const updateDockMagnification = useCallback(function animateDock(timestamp: number) {
     dockAnimationFrameRef.current = null;
     const dock = dockRef.current;
     const pointerX = dockPointerXRef.current;
-    if (!dock || pointerX === null) return;
+    if (!dock || dockRestingItemsRef.current.length === 0) return;
+    const elapsed = dockLastFrameTimeRef.current === null
+      ? 1 / 60
+      : (timestamp - dockLastFrameTimeRef.current) / 1000;
+    dockLastFrameTimeRef.current = timestamp;
+    let moving = false;
 
-    const measurements = dockRestingItemsRef.current.map((restingItem) => ({
-      ...restingItem,
-      magnification: restingItem.magnifies
-        ? getDockMagnification(pointerX - restingItem.center)
-        : null,
-    }));
+    const measurements = dockRestingItemsRef.current.map((restingItem) => {
+      if (!restingItem.magnifies) return { ...restingItem, magnification: null };
+      const target = pointerX === null ? 0 : getDockMagnification(pointerX - restingItem.center, restingItem.size).proximity;
+      restingItem.motion = advanceDockMotion(restingItem.motion, target, elapsed, pointerX === null);
+      moving ||= restingItem.motion.value !== target || restingItem.motion.velocity !== 0;
+      return { ...restingItem, magnification: getDockMagnificationForProximity(restingItem.motion.value, restingItem.size) };
+    });
     const totalExpansion = measurements.reduce(
       (total, item) => total + (item.magnification?.expansion ?? 0),
       0,
@@ -370,7 +391,21 @@ export function PortfolioOS() {
       }
       precedingExpansion += expansion;
     });
-  }, []);
+
+    if (moving) {
+      dockAnimationFrameRef.current = window.requestAnimationFrame(animateDock);
+    } else {
+      dockLastFrameTimeRef.current = null;
+      if (pointerX === null) resetDockMagnification();
+    }
+  }, [resetDockMagnification]);
+
+  const releaseDockMagnification = useCallback(() => {
+    dockPointerXRef.current = null;
+    if (dockRestingItemsRef.current.length && dockAnimationFrameRef.current === null) {
+      dockAnimationFrameRef.current = window.requestAnimationFrame(updateDockMagnification);
+    }
+  }, [updateDockMagnification]);
 
   const handleDockPointerMove = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
@@ -386,14 +421,17 @@ export function PortfolioOS() {
       const dock = dockRef.current;
       if (!dock) return;
       if (!dock.classList.contains("is-magnifying")) {
+        const dockBounds = dock.getBoundingClientRect();
+        const layoutScale = dockBounds.width / dock.offsetWidth;
         dockRestingItemsRef.current = Array.from(
           dock.querySelectorAll<HTMLElement>(".dock-magnify-item, .dock-divider"),
         ).map((element) => {
-          const bounds = element.getBoundingClientRect();
           return {
             element,
-            center: bounds.left + bounds.width / 2,
+            center: dockBounds.left + (element.offsetLeft + element.offsetWidth / 2) * layoutScale,
+            size: element.offsetWidth,
             magnifies: element.classList.contains("dock-magnify-item"),
+            motion: { value: 0, velocity: 0 },
           };
         });
         dock.classList.add("is-magnifying");
@@ -414,10 +452,12 @@ export function PortfolioOS() {
     const noHover = window.matchMedia("(hover: none)");
     const reset = () => resetDockMagnification();
     window.addEventListener("resize", reset);
+    window.addEventListener("blur", reset);
     reducedMotion.addEventListener("change", reset);
     noHover.addEventListener("change", reset);
     return () => {
       window.removeEventListener("resize", reset);
+      window.removeEventListener("blur", reset);
       reducedMotion.removeEventListener("change", reset);
       noHover.removeEventListener("change", reset);
     };
@@ -425,7 +465,7 @@ export function PortfolioOS() {
 
   useEffect(() => {
     resetDockMagnification();
-  }, [resetDockMagnification, state.windows]);
+  }, [resetDockMagnification, minimizedDockIds, dockSize]);
 
   useEffect(() => {
     if (initializationStartedRef.current) return;
@@ -448,6 +488,9 @@ export function PortfolioOS() {
 
     setTheme(localTheme);
     setGlass(localGlass);
+    setDockGlass(storage ? readStoredPreference(storage, DOCK_GLASS_KEY, (value): value is "on" | "off" => value === "on" || value === "off") === "on" : false);
+    const savedDockSize = storage ? readStoredPreference(storage, DOCK_SIZE_KEY, (value): value is string => value !== null && Number.isInteger(Number(value)) && Number(value) >= DOCK_MIN_SIZE && Number(value) <= DOCK_MAX_SIZE) : undefined;
+    setDockSize(savedDockSize ? Number(savedDockSize) : DOCK_ICON_SIZE);
     setWallpaper(localWallpaper);
     setCustomWallpaperPhotos(localWallpapers.custom);
     setWallpaperOrder(localWallpapers.order);
@@ -527,6 +570,16 @@ export function PortfolioOS() {
     const storage = getBrowserStorage();
     if (preferencesReady && storage) writeStoredPreference(storage, GLASS_KEY, glass);
   }, [glass, preferencesReady]);
+
+  useEffect(() => {
+    const storage = getBrowserStorage();
+    if (preferencesReady && storage) writeStoredPreference(storage, DOCK_GLASS_KEY, dockGlass ? "on" : "off");
+  }, [dockGlass, preferencesReady]);
+
+  useEffect(() => {
+    const storage = getBrowserStorage();
+    if (preferencesReady && storage) writeStoredPreference(storage, DOCK_SIZE_KEY, String(dockSize));
+  }, [dockSize, preferencesReady]);
 
   useEffect(() => {
     const storage = getBrowserStorage();
@@ -1069,13 +1122,12 @@ export function PortfolioOS() {
           { label: "关于 MyOS", icon: { kind: "system", name: "info" }, action: () => openApp("about") },
           { label: "系统设置…", icon: { kind: "system", name: "settings" }, action: () => openApp("settings"), separatorBefore: true },
         ],
-        go: [
-          { label: "欢迎", icon: { kind: "app", appId: "welcome" }, action: () => openApp("welcome") },
-          { label: "作品", icon: { kind: "app", appId: "work" }, action: () => openApp("work") },
-          { label: "关于我", icon: { kind: "app", appId: "about" }, action: () => openApp("about") },
-          { label: "实验室", icon: { kind: "app", appId: "lab" }, action: () => openApp("lab") },
-          { label: "联系我", icon: { kind: "app", appId: "contact" }, action: () => openApp("contact") },
-        ],
+        go: DOCK_APPS.map((app) => ({
+          label: app.title,
+          icon: { kind: "app", appId: app.id },
+          action: () => openApp(app.id),
+          separatorBefore: app.id === "trash",
+        })),
         window: [
           {
             label: "关闭当前窗口",
@@ -1126,8 +1178,10 @@ export function PortfolioOS() {
     <main
       ref={osShellRef}
       className="os-shell"
+      style={{ "--dock-size": `${dockSize}px`, "--dock-item-count": DOCK_APPS.length + (minimizedDockIds ? minimizedDockIds.split(",").length : 0) } as CSSProperties}
       data-theme={resolvedTheme}
       data-glass={glass}
+      data-dock-glass={dockGlass}
       data-wallpaper={wallpaper}
       aria-label="MyOS 个人作品桌面"
     >
@@ -1147,6 +1201,7 @@ export function PortfolioOS() {
       <div className="wallpaper-aurora wallpaper-aurora-one" aria-hidden="true" />
       <div className="wallpaper-aurora wallpaper-aurora-two" aria-hidden="true" />
       <div className="wallpaper-grain" aria-hidden="true" />
+      <div className="menu-bar-scrim" aria-hidden="true" />
       <div
         ref={liquidCanvasHostRef}
         className="liquid-canvas-host"
@@ -1233,8 +1288,8 @@ export function PortfolioOS() {
               >
                 <span className="menu-item-icon" aria-hidden="true">
                   {item.icon.kind === "system"
-                    ? <SystemIcon name={item.icon.name} size={14} strokeWidth={1.6} />
-                    : <AppIcon appId={item.icon.appId} size={14} strokeWidth={1.6} />}
+                    ? <SystemIcon name={item.icon.name} size={14} strokeWidth={1.35} />
+                    : <MenuAppIcon appId={item.icon.appId} />}
                 </span>
                 <span className="menu-item-label">{item.label}</span>
                 {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
@@ -1315,6 +1370,10 @@ export function PortfolioOS() {
                       setTheme={setTheme}
                       glass={glass}
                       setGlass={setGlass}
+                      dockGlass={dockGlass}
+                      setDockGlass={setDockGlass}
+                      dockSize={dockSize}
+                      setDockSize={setDockSize}
                       wallpaper={wallpaper}
                       setWallpaper={selectWallpaper}
                       wallpaperPhotos={photoWallpapers}
@@ -1362,7 +1421,7 @@ export function PortfolioOS() {
             aria-label="快速打开应用"
           >
             <label className="spotlight-input">
-              <span aria-hidden="true"><SystemIcon name="search" size={22} /></span>
+              <span aria-hidden="true"><SystemIcon name="search" size={20} strokeWidth={1.5} /></span>
               <input
                 ref={searchInputRef}
                 value={searchTerm}
@@ -1401,8 +1460,8 @@ export function PortfolioOS() {
                   onKeyDown={handleSearchDialogKeyDown}
                   onClick={() => selectSearchResult(app.id)}
                 >
-                  <span className="search-app-icon" style={appStyle(app.accent)} aria-hidden="true">
-                    <AppIcon appId={app.id} size={20} />
+                  <span className="search-app-icon" aria-hidden="true">
+                    <MenuAppIcon appId={app.id} />
                   </span>
                   <span><strong>{app.title}</strong><small>{app.description}</small></span>
                   <i aria-hidden="true"><SystemIcon name="return" size={15} /></i>
@@ -1420,8 +1479,8 @@ export function PortfolioOS() {
         data-liquid-ignore=""
         aria-label="应用程序 Dock"
         onPointerMove={handleDockPointerMove}
-        onPointerLeave={resetDockMagnification}
-        onPointerCancel={resetDockMagnification}
+        onPointerLeave={releaseDockMagnification}
+        onPointerCancel={releaseDockMagnification}
       >
         <span
           ref={dockLiquidTargetRef}
@@ -1429,7 +1488,7 @@ export function PortfolioOS() {
           data-liquid-target="dock"
           aria-hidden="true"
         />
-        {appDefinitions.filter((app) => app.dock && app.id !== "trash").map((app) => {
+        {DOCK_APPS.filter((app) => app.id !== "trash").map((app) => {
           const running = Boolean(state.windows[app.id]);
           const active = activeAppId === app.id;
           return (

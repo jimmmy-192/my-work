@@ -4,6 +4,7 @@ import test from "node:test";
 import { shouldUseOpticalGlass } from "../app/os/use-liquid-glass.ts";
 
 const supportedDesktop = {
+  enabled: true,
   preferencesReady: true,
   glass: "standard",
   mobile: false,
@@ -29,6 +30,7 @@ test("keeps the CSS fallback for accessibility and mobile modes", () => {
 });
 
 test("does not initialize before preferences or WebGL are available", () => {
+  assert.equal(shouldUseOpticalGlass({ ...supportedDesktop, enabled: false }), false);
   assert.equal(shouldUseOpticalGlass({ ...supportedDesktop, preferencesReady: false }), false);
   assert.equal(shouldUseOpticalGlass({ ...supportedDesktop, webGL: false }), false);
 });

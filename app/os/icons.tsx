@@ -8,10 +8,12 @@ import {
   ExternalLink,
   FileText,
   FlaskConical,
+  Folder,
   House,
   Info,
   LayoutGrid,
   Maximize2,
+  MessageCircle,
   Minus,
   Minimize2,
   Move,
@@ -108,6 +110,13 @@ export function AppIcon({
       className={className}
     />
   );
+}
+
+// Menu symbols use optical sizes so wide and narrow silhouettes carry similar weight.
+export function MenuAppIcon({ appId }: Pick<AppIconProps, "appId">) {
+  const icon = appId === "work" ? Folder : appId === "contact" ? MessageCircle : APP_ICONS[appId];
+  const size = appId === "about" || appId === "trash" ? 15 : 14;
+  return <IconGlyph icon={icon} size={size} strokeWidth={1.35} />;
 }
 
 export function SystemIcon({
