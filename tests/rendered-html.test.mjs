@@ -77,6 +77,8 @@ test("renders the complete MyOS portfolio shell", async () => {
       "wallpapers/blue-folds.png",
       "wallpapers/garden-canopy-upright.jpg",
       "wallpapers/snow-mountain.jpg",
+      "wallpapers/palm-starry-night.jpg",
+      "wallpapers/tropical-shore.jpg",
     ]) {
       const file = await readFile(new URL(asset, outputRoot));
       assert.ok(file.byteLength > 0, `${asset} is included in the static export`);

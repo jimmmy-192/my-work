@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { portfolioContent } from "../../content/portfolio";
 import { AppIcon, SystemIcon } from "./icons";
@@ -11,6 +11,9 @@ import type {
 } from "./cloud-preferences";
 import type { WallpaperPreference } from "./preferences";
 import type { WallpaperPhoto } from "./wallpaper-carousel";
+import { canRemoveWallpaper } from "./wallpaper-carousel";
+import { prepareWallpaper } from "./prepare-wallpaper";
+import { saveLocalWallpaperImages } from "./wallpaper-storage";
 import type { AppId } from "./window-manager";
 
 interface AppContentProps {
@@ -259,6 +262,8 @@ function WallpaperGroup({
 }) {
   const [message, setMessage] = useState("");
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const preparingRef = useRef(false);
 
   const movePhoto = (id: string, offset: number) => {
     const ids = photos.map((photo) => photo.id);
@@ -270,45 +275,35 @@ function WallpaperGroup({
   };
 
   const handleFiles = async (files: FileList | null) => {
-    if (!files?.length) return;
+    if (!files?.length || preparingRef.current) return;
+    const requestedCount = files.length;
     const available = Math.max(0, 5 - photos.filter((photo) => photo.custom).length);
     if (available === 0) {
       setMessage("最多可保存 5 张自定义壁纸");
       return;
     }
 
+    preparingRef.current = true;
+    setPreparing(true);
     try {
       const selected = Array.from(files).slice(0, available);
-      const uploaded = await Promise.all(selected.map(async (file, index) => {
-        const source = URL.createObjectURL(file);
-        try {
-          const image = new Image();
-          image.src = source;
-          await image.decode();
-          const scale = Math.min(1, 1600 / image.naturalWidth, 900 / image.naturalHeight);
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
-          const context = canvas.getContext("2d");
-          if (!context) throw new Error("Canvas unavailable");
-          context.fillStyle = "#101820";
-          context.fillRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(image, 0, 0, canvas.width, canvas.height);
-          return {
-            id: `custom-${Date.now()}-${index}`,
-            name: file.name.replace(/\.[^.]+$/, "") || "自定义壁纸",
-            url: canvas.toDataURL("image/jpeg", 0.76),
-            custom: true,
-          } satisfies WallpaperPhoto;
-        } finally {
-          URL.revokeObjectURL(source);
-        }
-      }));
-
-      onAdd(uploaded);
-      setMessage(`已加入 ${uploaded.length} 张壁纸`);
-    } catch {
-      setMessage("图片无法读取，请换一张再试");
+      const prepared: WallpaperPhoto[] = [];
+      // Process one full-resolution image at a time, and publish only a completed batch.
+      for (const [index, file] of selected.entries()) {
+        setMessage(`正在校准与优化 ${index + 1}/${selected.length}…`);
+        prepared.push(await prepareWallpaper(file));
+      }
+      setMessage("正在保存优化后的壁纸…");
+      const saved = await saveLocalWallpaperImages(prepared).catch(() => {
+        throw new Error("图片已优化，但本机保存失败。请检查浏览器存储空间后重试，图片尚未加入轮播。");
+      });
+      onAdd(saved);
+      setMessage(`已优化并加入 ${saved.length} 张壁纸${requestedCount > available ? "，已达到 5 张自定义壁纸上限" : ""}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "壁纸处理失败，尚未加入，请重试");
+    } finally {
+      preparingRef.current = false;
+      setPreparing(false);
     }
   };
 
@@ -318,12 +313,13 @@ function WallpaperGroup({
       <div className="wallpaper-manager">
         <div className="wallpaper-manager-heading">
           <span><strong>照片轮播</strong><small>{photos.length} 张壁纸，每 2 分钟切换</small></span>
-          <label className="wallpaper-upload-button">
-            上传图片
-            <input type="file" accept="image/*" multiple onChange={(event) => { void handleFiles(event.currentTarget.files); event.currentTarget.value = ""; }} />
+          <label className={`wallpaper-upload-button${preparing ? " is-preparing" : ""}`}>
+            {preparing ? "优化中…" : "上传图片"}
+            <input type="file" accept="image/*" multiple disabled={preparing} onChange={(event) => { void handleFiles(event.currentTarget.files); event.currentTarget.value = ""; }} />
           </label>
         </div>
-        <ol className="wallpaper-sort-list" aria-label="壁纸轮播顺序">
+        {message ? <p className="wallpaper-manager-message" role="status">{message}</p> : null}
+        <ol className="wallpaper-sort-list" aria-label="壁纸轮播顺序" aria-busy={preparing}>
           {photos.map((photo, index) => (
             <li
               key={photo.id}
@@ -341,17 +337,16 @@ function WallpaperGroup({
               }}
             >
               <span className="wallpaper-sort-handle" aria-hidden="true">⋮⋮</span>
-              <span className="wallpaper-sort-preview" style={{ backgroundImage: `url("${photo.url}")` }} />
-              <span className="wallpaper-sort-name"><strong>{photo.name}</strong><small>{photo.custom ? "自定义" : "内置"}</small></span>
+              <span className="wallpaper-sort-preview" title={photo.width && photo.height ? `${photo.width} × ${photo.height}` : undefined} style={{ backgroundImage: `url("${photo.url}")` }} />
+              <span className="wallpaper-sort-name"><strong>{photo.name}</strong><small>{index === 0 ? "首张保留" : photo.custom ? "自定义" : "内置"}</small></span>
               <span className="wallpaper-sort-actions">
                 <button type="button" aria-label={`上移${photo.name}`} disabled={index === 0} onClick={() => movePhoto(photo.id, -1)}>↑</button>
                 <button type="button" aria-label={`下移${photo.name}`} disabled={index === photos.length - 1} onClick={() => movePhoto(photo.id, 1)}>↓</button>
-                {photo.custom ? <button type="button" className="wallpaper-remove" aria-label={`删除${photo.name}`} onClick={() => onRemove(photo.id)}>×</button> : null}
+                <button type="button" className="wallpaper-remove" aria-label={`删除${photo.name}`} title={index === 0 ? "第一张壁纸不能删除" : "删除壁纸"} disabled={!canRemoveWallpaper(photos, photo.id)} onClick={() => { onRemove(photo.id); setMessage(`已删除「${photo.name}」`); }}>×</button>
               </span>
             </li>
           ))}
         </ol>
-        {message ? <p className="wallpaper-manager-message" role="status">{message}</p> : null}
       </div>
     </fieldset>
   );

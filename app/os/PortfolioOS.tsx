@@ -48,8 +48,11 @@ import {
   PHOTO_WALLPAPERS,
   WALLPAPER_SLIDE_INTERVAL_MS,
   getNextWallpaperSlide,
+  getWallpaperPhotos,
+  canRemoveWallpaper,
 } from "./wallpaper-carousel";
 import type { WallpaperPhoto } from "./wallpaper-carousel";
+import { deleteLocalWallpaperImage, restoreLocalWallpaperImages, serializeLocalWallpaperImages } from "./wallpaper-storage";
 import {
   MIN_HEIGHT,
   MIN_WIDTH,
@@ -97,6 +100,7 @@ const WALLPAPER_KEY = "myos-wallpaper-v2";
 const LEGACY_WALLPAPER_KEY = "myos-wallpaper";
 const CUSTOM_WALLPAPERS_KEY = "myos-custom-wallpapers-v1";
 const WALLPAPER_ORDER_KEY = "myos-wallpaper-order-v1";
+const HIDDEN_WALLPAPERS_KEY = "myos-hidden-wallpapers-v1";
 const MENU_ORDER = ["myos", "go", "window", "help"] as const;
 const DOCK_APPS = appDefinitions.filter((app) => app.dock);
 type MenuId = (typeof MENU_ORDER)[number];
@@ -124,11 +128,12 @@ function getBrowserStorage() {
 }
 
 function readLocalWallpapers(storage: Storage | null) {
-  if (!storage) return { custom: [] as WallpaperPhoto[], order: [] as string[] };
+  if (!storage) return { custom: [] as WallpaperPhoto[], order: [] as string[], hidden: [] as string[] };
 
   try {
     const custom = JSON.parse(storage.getItem(CUSTOM_WALLPAPERS_KEY) ?? "[]") as unknown;
     const order = JSON.parse(storage.getItem(WALLPAPER_ORDER_KEY) ?? "[]") as unknown;
+    const hidden = JSON.parse(storage.getItem(HIDDEN_WALLPAPERS_KEY) ?? "[]") as unknown;
     return {
       custom: Array.isArray(custom)
         ? custom.filter(
@@ -148,9 +153,12 @@ function readLocalWallpapers(storage: Storage | null) {
       order: Array.isArray(order)
         ? order.filter((id): id is string => typeof id === "string")
         : [],
+      hidden: Array.isArray(hidden)
+        ? hidden.filter((id): id is string => typeof id === "string")
+        : [],
     };
   } catch {
-    return { custom: [] as WallpaperPhoto[], order: [] as string[] };
+    return { custom: [] as WallpaperPhoto[], order: [] as string[], hidden: [] as string[] };
   }
 }
 
@@ -170,8 +178,10 @@ export function PortfolioOS() {
   const [photoSlideIndex, setPhotoSlideIndex] = useState(0);
   const [customWallpaperPhotos, setCustomWallpaperPhotos] = useState<WallpaperPhoto[]>([]);
   const [wallpaperOrder, setWallpaperOrder] = useState<string[]>([]);
+  const [hiddenWallpaperIds, setHiddenWallpaperIds] = useState<string[]>([]);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [preferencesReady, setPreferencesReady] = useState(false);
+  const [wallpaperStorageReady, setWallpaperStorageReady] = useState(false);
   const [cloudHydrated, setCloudHydrated] = useState(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>("checking");
   const [cloudAccount, setCloudAccount] = useState<CloudAccount | null>(null);
@@ -216,17 +226,10 @@ export function PortfolioOS() {
     .filter((windowState) => windowState?.status === "minimized")
     .map((windowState) => windowState?.appId)
     .join(",");
-  const photoWallpapers = useMemo(() => {
-    const all: WallpaperPhoto[] = [...PHOTO_WALLPAPERS, ...customWallpaperPhotos];
-    const byId = new Map(all.map((photo) => [photo.id, photo]));
-    const ordered = wallpaperOrder.flatMap((id) => {
-      const photo = byId.get(id);
-      if (!photo) return [];
-      byId.delete(id);
-      return [photo];
-    });
-    return [...ordered, ...byId.values()];
-  }, [customWallpaperPhotos, wallpaperOrder]);
+  const photoWallpapers = useMemo(
+    () => getWallpaperPhotos(customWallpaperPhotos, wallpaperOrder, hiddenWallpaperIds),
+    [customWallpaperPhotos, wallpaperOrder, hiddenWallpaperIds],
+  );
   const displayedPhotoSlideIndex =
     wallpaper === "mountain" && !prefersReducedMotion && photoSlideIndex < photoWallpapers.length ? photoSlideIndex : 0;
   const selectWallpaper = useCallback(
@@ -311,7 +314,15 @@ export function PortfolioOS() {
   }, []);
 
   const removeWallpaperPhoto = useCallback((id: string) => {
+    if (!canRemoveWallpaper(photoWallpapers, id)) return;
     const removedPhoto = customWallpaperPhotos.find((photo) => photo.id === id);
+    if (removedPhoto?.localAssetId) {
+      // Metadata removal remains effective even if cached-image cleanup fails.
+      void deleteLocalWallpaperImage(removedPhoto.localAssetId).catch(() => undefined);
+    }
+    if (PHOTO_WALLPAPERS.some((photo) => photo.id === id)) {
+      setHiddenWallpaperIds((current) => [...new Set([...current, id])]);
+    }
     setCustomWallpaperPhotos((current) => current.filter((photo) => photo.id !== id));
     setWallpaperOrder((current) => current.filter((photoId) => photoId !== id));
     setPhotoSlideIndex(0);
@@ -323,7 +334,7 @@ export function PortfolioOS() {
         .then(() => setCloudSyncStatus("synced"))
         .catch(() => setCloudSyncStatus("error"));
     }
-  }, [cloudHydrated, customWallpaperPhotos]);
+  }, [cloudHydrated, customWallpaperPhotos, photoWallpapers]);
 
   const reorderWallpaperPhotos = useCallback((ids: string[]) => {
     setWallpaperOrder(ids);
@@ -492,11 +503,14 @@ export function PortfolioOS() {
     const savedDockSize = storage ? readStoredPreference(storage, DOCK_SIZE_KEY, (value): value is string => value !== null && Number.isInteger(Number(value)) && Number(value) >= DOCK_MIN_SIZE && Number(value) <= DOCK_MAX_SIZE) : undefined;
     setDockSize(savedDockSize ? Number(savedDockSize) : DOCK_ICON_SIZE);
     setWallpaper(localWallpaper);
-    setCustomWallpaperPhotos(localWallpapers.custom);
     setWallpaperOrder(localWallpapers.order);
+    setHiddenWallpaperIds(localWallpapers.hidden);
 
     const initializeCloud = async () => {
       try {
+        const restoredLocalPhotos = await restoreLocalWallpaperImages(localWallpapers.custom);
+        setCustomWallpaperPhotos(restoredLocalPhotos);
+        setWallpaperStorageReady(true);
         const result = await loadCloudPreferences();
         if (result.kind === "signed-out") {
           setCloudSyncStatus(
@@ -520,7 +534,7 @@ export function PortfolioOS() {
           const uploaded: WallpaperPhoto[] = [];
           const replacementIds = new Map<string, string>();
           try {
-            for (const localPhoto of localWallpapers.custom) {
+            for (const localPhoto of restoredLocalPhotos) {
               if (!localPhoto.url.startsWith("data:")) continue;
               const cloudPhoto = await uploadCloudWallpaper(localPhoto);
               uploaded.push(cloudPhoto);
@@ -590,10 +604,11 @@ export function PortfolioOS() {
 
   useEffect(() => {
     const storage = getBrowserStorage();
-    if (!preferencesReady || !storage) return;
-    writeStoredPreference(storage, CUSTOM_WALLPAPERS_KEY, JSON.stringify(customWallpaperPhotos));
+    if (!preferencesReady || !wallpaperStorageReady || !storage) return;
+    writeStoredPreference(storage, CUSTOM_WALLPAPERS_KEY, serializeLocalWallpaperImages(customWallpaperPhotos));
     writeStoredPreference(storage, WALLPAPER_ORDER_KEY, JSON.stringify(photoWallpapers.map((photo) => photo.id)));
-  }, [customWallpaperPhotos, photoWallpapers, preferencesReady]);
+    writeStoredPreference(storage, HIDDEN_WALLPAPERS_KEY, JSON.stringify(hiddenWallpaperIds));
+  }, [customWallpaperPhotos, photoWallpapers, hiddenWallpaperIds, preferencesReady, wallpaperStorageReady]);
 
   useEffect(() => {
     if (!cloudHydrated || !cloudAccount) return;
@@ -1191,6 +1206,7 @@ export function PortfolioOS() {
             <span
               key={photo.id}
               className={`wallpaper-photo-slide${displayedPhotoSlideIndex === index ? " is-active" : ""}`}
+              data-custom={photo.custom ? "true" : undefined}
               style={{ backgroundImage: `url("${photo.url}")` }}
             />
           ))}

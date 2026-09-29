@@ -377,8 +377,7 @@ a:focus-visible,
   --card: rgba(255, 255, 255, 0.095);
 }
 
-.os-shell::before,
-.os-shell::after {
+.os-shell::before {
   content: "";
   position: absolute;
   z-index: -3;
@@ -395,17 +394,6 @@ a:focus-visible,
   background: var(--wallpaper-streak);
   filter: blur(50px);
   transform: rotate(-19deg);
-}
-
-.os-shell::after {
-  width: 52vmax;
-  height: 52vmax;
-  right: -28vmax;
-  bottom: -29vmax;
-  border: 1px solid var(--wallpaper-ring);
-  border-radius: 42% 58% 55% 45%;
-  box-shadow: 0 0 0 9vmax var(--wallpaper-ring-middle), 0 0 0 18vmax var(--wallpaper-ring-outer);
-  transform: rotate(27deg);
 }
 
 .wallpaper-photo-carousel {
@@ -445,6 +433,17 @@ a:focus-visible,
     /* Keep the wide desktop composition behind the Dock in taller panels. */
     inset-inline: min(0px, calc((100vw - 100dvh * 16 / 9) / 2));
   }
+}
+
+/* Uploaded photos fit the actual screen without the built-in wide composition. */
+.wallpaper-photo-slide[data-custom="true"] {
+  inset-inline: 0;
+  background-position: center;
+}
+
+.wallpaper-upload-button.is-preparing {
+  opacity: 0.65;
+  cursor: progress;
 }
 
 .wallpaper-aurora {
