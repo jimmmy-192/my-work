@@ -404,6 +404,10 @@ a:focus-visible,
   pointer-events: none;
 }
 
+.os-shell[data-wallpaper="mountain"][data-wallpaper-fallback="false"] {
+  --wallpaper-photo: none;
+}
+
 .wallpaper-photo-overlay {
   position: absolute;
   z-index: 2;
@@ -2131,6 +2135,21 @@ a:focus-visible,
 
 .wallpaper-sort-actions .wallpaper-remove {
   color: #c7463c;
+}
+
+.wallpaper-sort-actions .wallpaper-visibility {
+  width: auto;
+  min-width: 42px;
+  padding-inline: 7px;
+  font-size: 0.6875rem;
+}
+
+.wallpaper-sort-list li.is-hidden .wallpaper-sort-preview {
+  opacity: 0.45;
+}
+
+.wallpaper-sort-list li.is-hidden .wallpaper-sort-name {
+  color: var(--muted);
 }
 
 .wallpaper-manager-message {

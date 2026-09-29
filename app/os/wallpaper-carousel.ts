@@ -35,6 +35,14 @@ export function getWallpaperPhotos(custom: WallpaperPhoto[], order: string[], hi
   return photos.length ? photos : [PHOTO_WALLPAPERS[0]];
 }
 
+export function getVisibleWallpaperPhotos(
+  photos: readonly WallpaperPhoto[],
+  concealedIds: readonly string[],
+): WallpaperPhoto[] {
+  const concealed = new Set(concealedIds);
+  return photos.filter((photo) => !concealed.has(photo.id));
+}
+
 export function canRemoveWallpaper(photos: readonly WallpaperPhoto[], id: string) {
   return photos.findIndex((photo) => photo.id === id) > 0;
 }

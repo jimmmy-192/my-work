@@ -30,6 +30,8 @@ interface AppContentProps {
   wallpaper: WallpaperPreference;
   setWallpaper: (wallpaper: WallpaperPreference) => void;
   wallpaperPhotos: WallpaperPhoto[];
+  concealedWallpaperIds: string[];
+  toggleWallpaperVisibility: (id: string) => void;
   addWallpaperPhotos: (photos: WallpaperPhoto[]) => void;
   removeWallpaperPhoto: (id: string) => void;
   reorderWallpaperPhotos: (ids: string[]) => void;
@@ -251,11 +253,15 @@ function ChoiceGroup<T extends string>({
 
 function WallpaperGroup({
   photos,
+  concealedIds,
+  onToggleVisibility,
   onAdd,
   onRemove,
   onReorder,
 }: {
   photos: WallpaperPhoto[];
+  concealedIds: string[];
+  onToggleVisibility: (id: string) => void;
   onAdd: (photos: WallpaperPhoto[]) => void;
   onRemove: (id: string) => void;
   onReorder: (ids: string[]) => void;
@@ -264,6 +270,8 @@ function WallpaperGroup({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
   const preparingRef = useRef(false);
+  const concealed = new Set(concealedIds);
+  const visibleCount = photos.filter((photo) => !concealed.has(photo.id)).length;
 
   const movePhoto = (id: string, offset: number) => {
     const ids = photos.map((photo) => photo.id);
@@ -306,7 +314,7 @@ function WallpaperGroup({
       <legend>桌面背景</legend>
       <div className="wallpaper-manager">
         <div className="wallpaper-manager-heading">
-          <span><strong>照片轮播</strong><small>{photos.length} 张壁纸，每 1 分钟切换</small></span>
+          <span><strong>照片轮播</strong><small>{visibleCount ? `${visibleCount} 张轮播，每 1 分钟切换` : "全部壁纸已隐藏"}{photos.length > visibleCount ? ` · ${photos.length - visibleCount} 张已隐藏` : ""}</small></span>
           <label className={`wallpaper-upload-button${preparing ? " is-preparing" : ""}`}>
             {preparing ? "优化中…" : "上传图片"}
             <input type="file" accept="image/*" multiple disabled={preparing} onChange={(event) => { void handleFiles(event.currentTarget.files); event.currentTarget.value = ""; }} />
@@ -318,7 +326,7 @@ function WallpaperGroup({
             <li
               key={photo.id}
               draggable
-              className={draggedId === photo.id ? "is-dragging" : ""}
+              className={[draggedId === photo.id ? "is-dragging" : "", concealed.has(photo.id) ? "is-hidden" : ""].filter(Boolean).join(" ")}
               onDragStart={() => setDraggedId(photo.id)}
               onDragEnd={() => setDraggedId(null)}
               onDragOver={(event) => event.preventDefault()}
@@ -332,8 +340,12 @@ function WallpaperGroup({
             >
               <span className="wallpaper-sort-handle" aria-hidden="true">⋮⋮</span>
               <span className="wallpaper-sort-preview" title={photo.width && photo.height ? `${photo.width} × ${photo.height}` : undefined} style={{ backgroundImage: `url("${photo.url}")` }} />
-              <span className="wallpaper-sort-name"><strong>{photo.name}</strong><small>{index === 0 ? "首张保留" : photo.custom ? "自定义" : "内置"}</small></span>
+              <span className="wallpaper-sort-name"><strong>{photo.name}</strong><small>{index === 0 ? "首张保留" : photo.custom ? "自定义" : "内置"}{concealed.has(photo.id) ? " · 已隐藏" : ""}</small></span>
               <span className="wallpaper-sort-actions">
+                <button type="button" className="wallpaper-visibility" aria-label={`${concealed.has(photo.id) ? "显示" : "隐藏"}${photo.name}`} onClick={() => {
+                  onToggleVisibility(photo.id);
+                  setMessage(`${concealed.has(photo.id) ? "已显示" : "已隐藏"}「${photo.name}」`);
+                }}>{concealed.has(photo.id) ? "显示" : "隐藏"}</button>
                 <button type="button" aria-label={`上移${photo.name}`} disabled={index === 0} onClick={() => movePhoto(photo.id, -1)}>↑</button>
                 <button type="button" aria-label={`下移${photo.name}`} disabled={index === photos.length - 1} onClick={() => movePhoto(photo.id, 1)}>↓</button>
                 <button type="button" className="wallpaper-remove" aria-label={`删除${photo.name}`} title={index === 0 ? "第一张壁纸不能删除" : "删除壁纸"} disabled={!canRemoveWallpaper(photos, photo.id)} onClick={() => { onRemove(photo.id); setMessage(`已删除「${photo.name}」`); }}>×</button>
@@ -356,6 +368,8 @@ function SettingsApp({
   dockSize,
   setDockSize,
   wallpaperPhotos,
+  concealedWallpaperIds,
+  toggleWallpaperVisibility,
   addWallpaperPhotos,
   removeWallpaperPhoto,
   reorderWallpaperPhotos,
@@ -410,7 +424,7 @@ function SettingsApp({
         ) : null}
       </div>
       <form className="settings-form" onSubmit={(event) => event.preventDefault()}>
-        <WallpaperGroup photos={wallpaperPhotos} onAdd={addWallpaperPhotos} onRemove={removeWallpaperPhoto} onReorder={reorderWallpaperPhotos} />
+        <WallpaperGroup photos={wallpaperPhotos} concealedIds={concealedWallpaperIds} onToggleVisibility={toggleWallpaperVisibility} onAdd={addWallpaperPhotos} onRemove={removeWallpaperPhoto} onReorder={reorderWallpaperPhotos} />
         <ChoiceGroup label="主题" value={theme} options={themeOptions} onChange={setTheme} />
         <div className="setting-size-row">
           <div className="setting-size-heading">
@@ -493,6 +507,8 @@ export function AppContent(props: AppContentProps) {
           wallpaper={props.wallpaper}
           setWallpaper={props.setWallpaper}
           wallpaperPhotos={props.wallpaperPhotos}
+          concealedWallpaperIds={props.concealedWallpaperIds}
+          toggleWallpaperVisibility={props.toggleWallpaperVisibility}
           addWallpaperPhotos={props.addWallpaperPhotos}
           removeWallpaperPhoto={props.removeWallpaperPhoto}
           reorderWallpaperPhotos={props.reorderWallpaperPhotos}

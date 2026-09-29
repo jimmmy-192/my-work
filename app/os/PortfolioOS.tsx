@@ -50,6 +50,7 @@ import {
   WALLPAPER_SLIDE_INTERVAL_MS,
   getNextWallpaperSlide,
   getWallpaperPhotos,
+  getVisibleWallpaperPhotos,
   canRemoveWallpaper,
 } from "./wallpaper-carousel";
 import type { WallpaperPhoto } from "./wallpaper-carousel";
@@ -102,6 +103,7 @@ const LEGACY_WALLPAPER_KEY = "myos-wallpaper";
 const CUSTOM_WALLPAPERS_KEY = "myos-custom-wallpapers-v1";
 const WALLPAPER_ORDER_KEY = "myos-wallpaper-order-v1";
 const HIDDEN_WALLPAPERS_KEY = "myos-hidden-wallpapers-v1";
+const CONCEALED_WALLPAPERS_KEY = "myos-concealed-wallpapers-v1";
 const MENU_ORDER = ["myos", "go", "window", "help"] as const;
 const DOCK_APPS = appDefinitions.filter((app) => app.dock);
 type MenuId = (typeof MENU_ORDER)[number];
@@ -129,12 +131,13 @@ function getBrowserStorage() {
 }
 
 function readLocalWallpapers(storage: Storage | null) {
-  if (!storage) return { custom: [] as WallpaperPhoto[], order: [] as string[], hidden: [] as string[] };
+  if (!storage) return { custom: [] as WallpaperPhoto[], order: [] as string[], hidden: [] as string[], concealed: [] as string[] };
 
   try {
     const custom = JSON.parse(storage.getItem(CUSTOM_WALLPAPERS_KEY) ?? "[]") as unknown;
     const order = JSON.parse(storage.getItem(WALLPAPER_ORDER_KEY) ?? "[]") as unknown;
     const hidden = JSON.parse(storage.getItem(HIDDEN_WALLPAPERS_KEY) ?? "[]") as unknown;
+    const concealed = JSON.parse(storage.getItem(CONCEALED_WALLPAPERS_KEY) ?? "[]") as unknown;
     return {
       custom: Array.isArray(custom)
         ? custom.filter(
@@ -157,9 +160,12 @@ function readLocalWallpapers(storage: Storage | null) {
       hidden: Array.isArray(hidden)
         ? hidden.filter((id): id is string => typeof id === "string")
         : [],
+      concealed: Array.isArray(concealed)
+        ? concealed.filter((id): id is string => typeof id === "string")
+        : [],
     };
   } catch {
-    return { custom: [] as WallpaperPhoto[], order: [] as string[], hidden: [] as string[] };
+    return { custom: [] as WallpaperPhoto[], order: [] as string[], hidden: [] as string[], concealed: [] as string[] };
   }
 }
 
@@ -180,6 +186,7 @@ export function PortfolioOS() {
   const [customWallpaperPhotos, setCustomWallpaperPhotos] = useState<WallpaperPhoto[]>([]);
   const [wallpaperOrder, setWallpaperOrder] = useState<string[]>([]);
   const [hiddenWallpaperIds, setHiddenWallpaperIds] = useState<string[]>([]);
+  const [concealedWallpaperIds, setConcealedWallpaperIds] = useState<string[]>([]);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [wallpaperStorageReady, setWallpaperStorageReady] = useState(false);
@@ -231,8 +238,12 @@ export function PortfolioOS() {
     () => getWallpaperPhotos(customWallpaperPhotos, wallpaperOrder, hiddenWallpaperIds),
     [customWallpaperPhotos, wallpaperOrder, hiddenWallpaperIds],
   );
+  const visiblePhotoWallpapers = useMemo(
+    () => getVisibleWallpaperPhotos(photoWallpapers, concealedWallpaperIds),
+    [photoWallpapers, concealedWallpaperIds],
+  );
   const displayedPhotoSlideIndex =
-    wallpaper === "mountain" && !prefersReducedMotion && photoSlideIndex < photoWallpapers.length ? photoSlideIndex : 0;
+    wallpaper === "mountain" && !prefersReducedMotion && photoSlideIndex < visiblePhotoWallpapers.length ? photoSlideIndex : 0;
   const selectWallpaper = useCallback(
     (nextWallpaper: WallpaperPreference) => {
       if (nextWallpaper !== wallpaper) {
@@ -251,7 +262,7 @@ export function PortfolioOS() {
     enabled: dockGlass,
     preferencesReady: preferencesReady && (wallpaper !== "mountain" || photoCarouselReady),
     glass,
-    sceneKey: `${resolvedTheme}:${glass}:${wallpaper}:${displayedPhotoSlideIndex}`,
+    sceneKey: `${resolvedTheme}:${glass}:${wallpaper}:${displayedPhotoSlideIndex}:${visiblePhotoWallpapers[displayedPhotoSlideIndex]?.id ?? "none"}`,
   });
 
   useEffect(() => {
@@ -268,7 +279,7 @@ export function PortfolioOS() {
     let frame: number | null = null;
 
     void Promise.all(
-      photoWallpapers.map(async ({ url }) => {
+      visiblePhotoWallpapers.map(async ({ url }) => {
         const image = new Image();
         image.src = url;
         await image.decode().catch(() => undefined);
@@ -286,7 +297,7 @@ export function PortfolioOS() {
       cancelled = true;
       if (frame !== null) window.cancelAnimationFrame(frame);
     };
-  }, [photoWallpapers, wallpaper]);
+  }, [visiblePhotoWallpapers, wallpaper]);
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -300,13 +311,21 @@ export function PortfolioOS() {
   }, []);
 
   useEffect(() => {
-    if (wallpaper !== "mountain" || !photoCarouselReady || prefersReducedMotion) return;
+    if (wallpaper !== "mountain" || !photoCarouselReady || prefersReducedMotion || visiblePhotoWallpapers.length < 2) return;
 
     const timer = window.setInterval(() => {
-      setPhotoSlideIndex((currentIndex) => getNextWallpaperSlide(currentIndex, photoWallpapers.length));
+      setPhotoSlideIndex((currentIndex) => getNextWallpaperSlide(currentIndex, visiblePhotoWallpapers.length));
     }, WALLPAPER_SLIDE_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [photoCarouselReady, photoWallpapers.length, prefersReducedMotion, wallpaper]);
+  }, [photoCarouselReady, visiblePhotoWallpapers.length, prefersReducedMotion, wallpaper]);
+
+  const toggleWallpaperVisibility = useCallback((id: string) => {
+    setConcealedWallpaperIds((current) => current.includes(id)
+      ? current.filter((photoId) => photoId !== id)
+      : [...current, id]);
+    setPhotoSlideIndex(0);
+    setPhotoCarouselReady(false);
+  }, []);
 
   const addWallpaperPhotos = useCallback((photos: WallpaperPhoto[]) => {
     setCustomWallpaperPhotos((current) => [...current, ...photos]);
@@ -325,6 +344,7 @@ export function PortfolioOS() {
       setHiddenWallpaperIds((current) => [...new Set([...current, id])]);
     }
     setCustomWallpaperPhotos((current) => current.filter((photo) => photo.id !== id));
+    setConcealedWallpaperIds((current) => current.filter((photoId) => photoId !== id));
     setWallpaperOrder((current) => current.filter((photoId) => photoId !== id));
     setPhotoSlideIndex(0);
     setPhotoCarouselReady(false);
@@ -506,6 +526,7 @@ export function PortfolioOS() {
     setWallpaper(localWallpaper);
     setWallpaperOrder(localWallpapers.order);
     setHiddenWallpaperIds(localWallpapers.hidden);
+    setConcealedWallpaperIds(localWallpapers.concealed);
 
     const initializeCloud = async () => {
       try {
@@ -562,6 +583,7 @@ export function PortfolioOS() {
           await saveCloudPreferences(snapshot);
           setCustomWallpaperPhotos(migratedCustom);
           setWallpaperOrder(migratedOrder);
+          setConcealedWallpaperIds((current) => current.map((id) => replacementIds.get(id) ?? id));
         }
 
         setCloudHydrated(true);
@@ -609,7 +631,8 @@ export function PortfolioOS() {
     writeStoredPreference(storage, CUSTOM_WALLPAPERS_KEY, serializeLocalWallpaperImages(customWallpaperPhotos));
     writeStoredPreference(storage, WALLPAPER_ORDER_KEY, JSON.stringify(photoWallpapers.map((photo) => photo.id)));
     writeStoredPreference(storage, HIDDEN_WALLPAPERS_KEY, JSON.stringify(hiddenWallpaperIds));
-  }, [customWallpaperPhotos, photoWallpapers, hiddenWallpaperIds, preferencesReady, wallpaperStorageReady]);
+    writeStoredPreference(storage, CONCEALED_WALLPAPERS_KEY, JSON.stringify(concealedWallpaperIds));
+  }, [customWallpaperPhotos, photoWallpapers, hiddenWallpaperIds, concealedWallpaperIds, preferencesReady, wallpaperStorageReady]);
 
   useEffect(() => {
     if (!cloudHydrated || !cloudAccount) return;
@@ -628,6 +651,9 @@ export function PortfolioOS() {
           current.map((photo) => (photo.id === pendingPhoto.id ? cloudPhoto : photo)),
         );
         setWallpaperOrder((current) =>
+          current.map((id) => (id === pendingPhoto.id ? cloudPhoto.id : id)),
+        );
+        setConcealedWallpaperIds((current) =>
           current.map((id) => (id === pendingPhoto.id ? cloudPhoto.id : id)),
         );
         setCloudSyncStatus("synced");
@@ -1199,11 +1225,12 @@ export function PortfolioOS() {
       data-glass={glass}
       data-dock-glass={dockGlass}
       data-wallpaper={wallpaper}
+      data-wallpaper-fallback={visiblePhotoWallpapers.some((photo) => photo.id === "lake")}
       aria-label="MyOS 个人作品桌面"
     >
       {wallpaper === "mountain" ? (
         <div className="wallpaper-photo-carousel" aria-hidden="true">
-          {photoWallpapers.map((photo, index) => (
+          {visiblePhotoWallpapers.map((photo, index) => (
             <span
               key={photo.id}
               className={`wallpaper-photo-slide${displayedPhotoSlideIndex === index ? " is-active" : ""}`}
@@ -1394,6 +1421,8 @@ export function PortfolioOS() {
                       wallpaper={wallpaper}
                       setWallpaper={selectWallpaper}
                       wallpaperPhotos={photoWallpapers}
+                      concealedWallpaperIds={concealedWallpaperIds}
+                      toggleWallpaperVisibility={toggleWallpaperVisibility}
                       addWallpaperPhotos={addWallpaperPhotos}
                       removeWallpaperPhoto={removeWallpaperPhoto}
                       reorderWallpaperPhotos={reorderWallpaperPhotos}

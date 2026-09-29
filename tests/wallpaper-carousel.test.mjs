@@ -7,6 +7,7 @@ import {
   WALLPAPER_SLIDE_INTERVAL_MS,
   getNextWallpaperSlide,
   getWallpaperPhotos,
+  getVisibleWallpaperPhotos,
   canRemoveWallpaper,
 } from "../app/os/wallpaper-carousel.ts";
 
@@ -42,6 +43,37 @@ test("always retains a wallpaper and protects a custom photo when it is first", 
   const photos = getWallpaperPhotos([custom], [custom.id], []);
   assert.equal(canRemoveWallpaper(photos, custom.id), false);
   assert.equal(canRemoveWallpaper(photos, "lake"), true);
+});
+
+test("conceals built-in and custom photos without changing the managed list or order", () => {
+  const firstCustom = Object.freeze({ id: "custom-first", name: "First", url: "data:image/jpeg,first", custom: true });
+  const secondCustom = Object.freeze({ id: "custom-second", name: "Second", url: "data:image/jpeg,second", custom: true });
+  const photos = Object.freeze([PHOTO_WALLPAPERS[1], firstCustom, PHOTO_WALLPAPERS[0], secondCustom]);
+  const concealedIds = Object.freeze(["garden", secondCustom.id, "missing-id"]);
+
+  const visible = getVisibleWallpaperPhotos(photos, concealedIds);
+
+  assert.deepEqual(visible, [firstCustom, PHOTO_WALLPAPERS[0]]);
+  assert.equal(visible[0], photos[1]);
+  assert.equal(visible[1], photos[2]);
+  assert.deepEqual(photos.map((photo) => photo.id), ["garden", "custom-first", "lake", "custom-second"]);
+});
+
+test("showing concealed photos restores their original managed positions", () => {
+  const custom = { id: "custom-middle", name: "Middle", url: "data:image/jpeg,middle", custom: true };
+  const photos = [PHOTO_WALLPAPERS[1], custom, PHOTO_WALLPAPERS[0]];
+
+  assert.deepEqual(getVisibleWallpaperPhotos(photos, ["garden", custom.id]), [PHOTO_WALLPAPERS[0]]);
+  assert.deepEqual(getVisibleWallpaperPhotos(photos, [custom.id]), [PHOTO_WALLPAPERS[1], PHOTO_WALLPAPERS[0]]);
+  assert.deepEqual(getVisibleWallpaperPhotos(photos, []), photos);
+});
+
+test("all concealed photos leave an empty carousel without reviving a fallback", () => {
+  const custom = { id: "custom-only", name: "Only", url: "data:image/jpeg,only", custom: true };
+  const photos = [...PHOTO_WALLPAPERS, custom];
+
+  assert.deepEqual(getVisibleWallpaperPhotos(photos, photos.map((photo) => photo.id)), []);
+  assert.deepEqual(getVisibleWallpaperPhotos([], []), []);
 });
 
 test("keeps the displayed photo and Liquid Glass snapshot in sync", async () => {
