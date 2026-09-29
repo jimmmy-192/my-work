@@ -276,17 +276,11 @@ function WallpaperGroup({
 
   const handleFiles = async (files: FileList | null) => {
     if (!files?.length || preparingRef.current) return;
-    const requestedCount = files.length;
-    const available = Math.max(0, 5 - photos.filter((photo) => photo.custom).length);
-    if (available === 0) {
-      setMessage("最多可保存 5 张自定义壁纸");
-      return;
-    }
 
     preparingRef.current = true;
     setPreparing(true);
     try {
-      const selected = Array.from(files).slice(0, available);
+      const selected = Array.from(files);
       const prepared: WallpaperPhoto[] = [];
       // Process one full-resolution image at a time, and publish only a completed batch.
       for (const [index, file] of selected.entries()) {
@@ -298,7 +292,7 @@ function WallpaperGroup({
         throw new Error("图片已优化，但本机保存失败。请检查浏览器存储空间后重试，图片尚未加入轮播。");
       });
       onAdd(saved);
-      setMessage(`已优化并加入 ${saved.length} 张壁纸${requestedCount > available ? "，已达到 5 张自定义壁纸上限" : ""}`);
+      setMessage(`已优化并加入 ${saved.length} 张壁纸`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "壁纸处理失败，尚未加入，请重试");
     } finally {
@@ -312,7 +306,7 @@ function WallpaperGroup({
       <legend>桌面背景</legend>
       <div className="wallpaper-manager">
         <div className="wallpaper-manager-heading">
-          <span><strong>照片轮播</strong><small>{photos.length} 张壁纸，每 2 分钟切换</small></span>
+          <span><strong>照片轮播</strong><small>{photos.length} 张壁纸，每 1 分钟切换</small></span>
           <label className={`wallpaper-upload-button${preparing ? " is-preparing" : ""}`}>
             {preparing ? "优化中…" : "上传图片"}
             <input type="file" accept="image/*" multiple disabled={preparing} onChange={(event) => { void handleFiles(event.currentTarget.files); event.currentTarget.value = ""; }} />

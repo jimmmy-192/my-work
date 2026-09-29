@@ -15,8 +15,9 @@ import type {
   KeyboardEvent,
   PointerEvent as ReactPointerEvent,
 } from "react";
-import { appDefinitions, portfolioContent } from "../../content/portfolio";
+import { appDefinitions } from "../../content/portfolio";
 import { AppContent } from "./apps";
+import { MenuMonogram } from "./MenuMonogram";
 import {
   deleteCloudWallpaper,
   isCloudWallpaper,
@@ -463,16 +464,16 @@ export function PortfolioOS() {
     const noHover = window.matchMedia("(hover: none)");
     const reset = () => resetDockMagnification();
     window.addEventListener("resize", reset);
-    window.addEventListener("blur", reset);
+    window.addEventListener("blur", releaseDockMagnification);
     reducedMotion.addEventListener("change", reset);
     noHover.addEventListener("change", reset);
     return () => {
       window.removeEventListener("resize", reset);
-      window.removeEventListener("blur", reset);
+      window.removeEventListener("blur", releaseDockMagnification);
       reducedMotion.removeEventListener("change", reset);
       noHover.removeEventListener("change", reset);
     };
-  }, [resetDockMagnification]);
+  }, [resetDockMagnification, releaseDockMagnification]);
 
   useEffect(() => {
     resetDockMagnification();
@@ -1229,7 +1230,7 @@ export function PortfolioOS() {
         <div className="menu-left">
           <button
             className="monogram"
-            aria-label="打开 MyOS 菜单"
+            aria-label="打开 Sixxxx 菜单"
             aria-haspopup="menu"
             aria-expanded={state.activeMenu === "myos"}
             ref={(element) => {
@@ -1243,7 +1244,7 @@ export function PortfolioOS() {
               }
             }}
           >
-            {portfolioContent.monogram}
+            <MenuMonogram />
           </button>
           <strong className="active-app-name">{activeApp?.title ?? "桌面"}</strong>
           {([{ id: "go", label: "前往" }, { id: "window", label: "窗口" }, { id: "help", label: "帮助" }] as const).map((menu) => (
@@ -1494,6 +1495,7 @@ export function PortfolioOS() {
         className="dock"
         data-liquid-ignore=""
         aria-label="应用程序 Dock"
+        onPointerEnter={handleDockPointerMove}
         onPointerMove={handleDockPointerMove}
         onPointerLeave={releaseDockMagnification}
         onPointerCancel={releaseDockMagnification}

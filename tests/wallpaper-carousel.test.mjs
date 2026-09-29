@@ -10,8 +10,8 @@ import {
   canRemoveWallpaper,
 } from "../app/os/wallpaper-carousel.ts";
 
-test("rotates the ordered photo wallpapers every two minutes", () => {
-  assert.equal(WALLPAPER_SLIDE_INTERVAL_MS, 120_000);
+test("rotates the ordered photo wallpapers every minute", () => {
+  assert.equal(WALLPAPER_SLIDE_INTERVAL_MS, 60_000);
   assert.deepEqual(
     PHOTO_WALLPAPERS.map((photo) => photo.url),
     ["/wallpapers/snow-mountain.jpg", "/wallpapers/garden-canopy-upright.jpg", "/wallpapers/blue-folds.png", "/wallpapers/palm-starry-night.jpg", "/wallpapers/tropical-shore.jpg"],

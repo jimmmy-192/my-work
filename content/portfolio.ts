@@ -22,7 +22,7 @@ export interface AppDefinition {
 export const portfolioContent = {
   systemName: "MyOS",
   ownerName: "你的名字",
-  monogram: "M",
+  monogram: "S",
   role: "产品设计师 · 体验创造者",
   location: "上海 / 远程协作",
   availability: "目前开放新的合作机会",

@@ -2,7 +2,7 @@ export const WALLPAPER_OPTIONS = [
   {
     value: "mountain",
     label: "照片轮播",
-    description: "每 2 分钟切换，可上传与排序",
+    description: "每 1 分钟切换，可上传与排序",
   },
 ] as const;
 

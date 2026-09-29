@@ -2,7 +2,6 @@ const USER_ID_HEADER = "oai-authenticated-user-id";
 const USER_EMAIL_HEADER = "oai-authenticated-user-email";
 const USER_FULL_NAME_HEADER = "oai-authenticated-user-full-name";
 const USER_FULL_NAME_ENCODING_HEADER = "oai-authenticated-user-full-name-encoding";
-const MAX_WALLPAPERS = 5;
 const MAX_WALLPAPER_BYTES = 4 * 1024 * 1024;
 const BUILTIN_WALLPAPER_IDS = ["lake", "garden", "blue-folds"];
 const VALID_THEMES = new Set(["system", "light", "dark"]);
@@ -175,15 +174,6 @@ async function uploadWallpaper(request: Request, env: PreferencesEnv, user: Auth
   if (!(file instanceof File)) return json({ error: "Wallpaper file is required" }, 400);
   if (!VALID_IMAGE_TYPES.has(file.type) || file.size <= 0 || file.size > MAX_WALLPAPER_BYTES) {
     return json({ error: "Wallpaper must be an image smaller than 4 MB" }, 400);
-  }
-
-  const countRow = await env.DB.prepare(
-    "SELECT COUNT(*) AS count FROM custom_wallpapers WHERE user_id = ?",
-  )
-    .bind(user.userId)
-    .first<{ count: number }>();
-  if (Number(countRow?.count ?? 0) >= MAX_WALLPAPERS) {
-    return json({ error: "You can save up to 5 custom wallpapers" }, 409);
   }
 
   const id = crypto.randomUUID();

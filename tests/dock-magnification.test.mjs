@@ -50,9 +50,32 @@ test("motion feels the same at 60 Hz and 120 Hz", () => {
   };
   const standard = sample(60);
   const highRefresh = sample(120);
-  assert.ok(standard.value > 0.96 && standard.value < 1);
+  assert.ok(standard.value > 0.8 && standard.value < 0.88);
   assert.ok(Math.abs(standard.value - highRefresh.value) < 1e-10);
   assert.ok(Math.abs(standard.velocity - highRefresh.velocity) < 1e-10);
+});
+
+test("entry eases into enlargement and exit has a longer, monotonic settling tail", () => {
+  let entering = { value: 0, velocity: 0 };
+  let leaving = { value: 1, velocity: 0 };
+  const entry = [];
+  const exit = [];
+  for (let frame = 0; frame < 60; frame++) {
+    const nextEntry = advanceDockMotion(entering, 1, 1 / 60);
+    const nextExit = advanceDockMotion(leaving, 0, 1 / 60, true);
+    assert.ok(nextEntry.value >= entering.value && nextEntry.value <= 1);
+    assert.ok(nextExit.value <= leaving.value && nextExit.value >= 0);
+    entering = nextEntry;
+    leaving = nextExit;
+    entry.push(entering.value);
+    exit.push(leaving.value);
+  }
+  assert.ok(entry[0] < 0.05, "entry starts gently instead of jumping");
+  assert.ok(entry[5] > 0.35 && entry[5] < 0.55, "the first 100ms visibly ramps up");
+  assert.ok(entry[17] > 0.94 && entry[17] < 0.98, "entry settles at about 300ms");
+  assert.ok(exit[5] > 0.65, "exit keeps most of its size during the first 100ms");
+  assert.ok(exit[23] > 0.04 && exit[23] < 0.09, "exit eases through a longer tail");
+  assert.ok(exit[47] < 0.002, "exit returns completely without oscillation");
 });
 
 test("quick departure and reentry retain continuity and settle exactly", () => {

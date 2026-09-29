@@ -24,7 +24,9 @@ export function advanceDockMotion(
   elapsedSeconds: number,
   returning = false,
 ): DockMotion {
-  const frequency = returning ? 20 : 28;
+  // Reach ~95% in 300ms on entry and 430ms on exit. Preserve velocity
+  // when the pointer changes direction so a quick reentry never snaps.
+  const frequency = returning ? 11 : 16;
   const elapsed = Math.max(0, Math.min(elapsedSeconds, 0.064));
   const displacement = current.value - target;
   const momentum = current.velocity + frequency * displacement;

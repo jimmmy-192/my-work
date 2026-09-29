@@ -614,6 +614,8 @@ a:focus-visible,
 }
 
 .menu-bar .monogram {
+  display: grid;
+  place-items: center;
   width: 26px;
   padding: 0;
   border: 0;
@@ -627,6 +629,60 @@ a:focus-visible,
   filter: var(--menu-bar-icon-filter);
 }
 
+.menu-monogram-mark {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 18px;
+  margin: auto;
+  text-shadow: none;
+  pointer-events: none;
+}
+
+.menu-monogram-mark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  -webkit-mask: var(--monogram-mask) center / contain no-repeat;
+  mask: var(--monogram-mask) center / contain no-repeat;
+}
+
+/* Neutral glazing lets the real wallpaper supply the symbol's hue. */
+.menu-monogram-mark::after {
+  background:
+    radial-gradient(ellipse at 32% 24%, rgba(255, 255, 255, 0.68), transparent 68%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0.06) 78%, rgba(255, 255, 255, 0.3));
+  -webkit-backdrop-filter: blur(3px) saturate(180%) brightness(1.8);
+  backdrop-filter: blur(3px) saturate(180%) brightness(1.8);
+}
+
+.menu-bar .menu-monogram-rim {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1px 0.75px rgba(0, 0, 0, 0.4));
+}
+
+.menu-monogram-fallback {
+  display: none;
+}
+
+@media (forced-colors: active), (prefers-contrast: more) {
+  .menu-monogram-mark::after,
+  .menu-monogram-rim {
+    display: none;
+  }
+
+  .menu-monogram-fallback {
+    display: block;
+    color: currentColor;
+    width: 100%;
+    height: 100%;
+  }
+}
+
 .active-app-name {
   max-width: 13rem;
   margin: 0 6px 0 3px;
@@ -636,7 +692,7 @@ a:focus-visible,
 }
 
 .menu-right time {
-  min-width: 9.25rem;
+  min-width: 0;
   padding-left: 4px;
   overflow: hidden;
   text-align: right;

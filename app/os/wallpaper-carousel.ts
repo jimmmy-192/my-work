@@ -19,7 +19,7 @@ export interface WallpaperPhoto {
   height?: number;
 }
 
-export const WALLPAPER_SLIDE_INTERVAL_MS = 120_000;
+export const WALLPAPER_SLIDE_INTERVAL_MS = 60_000;
 
 export function getWallpaperPhotos(custom: WallpaperPhoto[], order: string[], hidden: string[] = []): WallpaperPhoto[] {
   const hiddenIds = new Set(hidden);
