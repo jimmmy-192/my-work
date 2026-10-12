@@ -53,12 +53,15 @@ export type OSAction =
 
 export const MIN_WIDTH = 360;
 export const MIN_HEIGHT = 260;
+export const MIN_VISIBLE_WIDTH = 160;
+/** Keep the 28px title bar reachable above the Dock and below the menu bar. */
+export const MIN_VISIBLE_HEIGHT = 28;
 
-const INITIAL_WELCOME_BOUNDS: Bounds = {
-  x: 64,
-  y: 72,
-  width: 640,
-  height: 480,
+export const WELCOME_DEFAULT_BOUNDS: Bounds = {
+  x: 0,
+  y: 0,
+  width: 1170,
+  height: 638,
 };
 
 function copyBounds(bounds: Bounds): Bounds {
@@ -124,13 +127,38 @@ export function clampBounds(
   };
 }
 
+/** Allows off-screen placement while retaining a usable strip of title bar. */
+export function clampVisibleBounds(
+  bounds: Bounds,
+  workspace: Bounds,
+  minimum: MinimumSize = { width: MIN_WIDTH, height: MIN_HEIGHT },
+): Bounds {
+  const area = workspaceBounds(workspace);
+  const { width, height } = clampBounds(bounds, area, minimum);
+  const visibleWidth = Math.min(MIN_VISIBLE_WIDTH, width, area.width);
+  const visibleHeight = Math.min(MIN_VISIBLE_HEIGHT, height, area.height);
+
+  return {
+    x: Math.min(
+      area.x + area.width - visibleWidth,
+      Math.max(area.x + visibleWidth - width, finiteOr(bounds.x, area.x)),
+    ),
+    y: Math.min(
+      area.y + area.height - visibleHeight,
+      Math.max(area.y, finiteOr(bounds.y, area.y)),
+    ),
+    width,
+    height,
+  };
+}
+
 export function createInitialOSState(): OSState {
   return {
     windows: {
       welcome: {
         appId: "welcome",
         status: "normal",
-        bounds: copyBounds(INITIAL_WELCOME_BOUNDS),
+        bounds: copyBounds(WELCOME_DEFAULT_BOUNDS),
         restoreBounds: null,
       },
     },
@@ -284,7 +312,7 @@ export function osReducer(state: OSState, action: OSAction): OSState {
         return updateWindow(state, action.appId, (window) => ({
           ...window,
           status: "normal",
-          bounds: clampBounds(
+          bounds: clampVisibleBounds(
             window.restoreBounds ?? window.bounds,
             action.workspace,
           ),

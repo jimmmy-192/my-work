@@ -1,4 +1,5 @@
 import type { AppId } from "../app/os/window-manager";
+import { WELCOME_DEFAULT_BOUNDS } from "../app/os/window-manager";
 
 export interface AppDefinition {
   id: AppId;
@@ -143,7 +144,7 @@ export const appDefinitions: AppDefinition[] = [
     desktop: true,
     dock: true,
     description: "从这里认识我和这套个人系统",
-    defaultBounds: { x: 132, y: 96, width: 760, height: 560 },
+    defaultBounds: { ...WELCOME_DEFAULT_BOUNDS },
     minSize: { width: 520, height: 420 },
   },
   {

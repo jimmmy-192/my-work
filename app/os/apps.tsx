@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { portfolioContent } from "../../content/portfolio";
 import { AppIcon, SystemIcon } from "./icons";
 import { DOCK_MIN_SIZE, DOCK_MAX_SIZE } from "./dock-magnification";
@@ -14,6 +13,9 @@ import type { WallpaperPhoto } from "./wallpaper-carousel";
 import { canRemoveWallpaper } from "./wallpaper-carousel";
 import { prepareWallpaper } from "./prepare-wallpaper";
 import { saveLocalWallpaperImages } from "./wallpaper-storage";
+import TechText from "./TechText/TechText";
+import LightRays from "./LightRays/LightRays";
+import WorkDisc from "./WorkDisc/WorkDisc";
 import type { AppId } from "./window-manager";
 
 interface AppContentProps {
@@ -50,83 +52,50 @@ function AppHeader({ eyebrow, title, intro }: { eyebrow: string; title: string; 
 }
 
 function WelcomeApp({ openApp }: Pick<AppContentProps, "openApp">) {
-  const { hero, ownerName, role, availability, stats } = portfolioContent;
-
   return (
-    <article className="app-view welcome-view">
-      <div className="welcome-hero">
-        <div className="welcome-copy">
-          <p className="app-eyebrow">{hero.eyebrow}</p>
-          <h1>{hero.title}</h1>
-          <p className="welcome-role">{role}</p>
-          <p className="welcome-intro">{hero.intro}</p>
-          <div className="app-actions">
-            <button className="primary-action" type="button" onClick={() => openApp("work")}>
-              浏览作品 <span aria-hidden="true"><SystemIcon name="arrowRight" size={16} /></span>
-            </button>
-            <button className="secondary-action" type="button" onClick={() => openApp("about")}>
-              关于我
-            </button>
-          </div>
-        </div>
-        <div className="welcome-portrait" aria-label={`${ownerName}的个人标识`}>
-          <span className="portrait-orbit portrait-orbit-one" aria-hidden="true" />
-          <span className="portrait-orbit portrait-orbit-two" aria-hidden="true" />
-          <strong aria-hidden="true">{portfolioContent.monogram}</strong>
-          <small>{availability}</small>
-        </div>
+    <article className="welcome-tech-view">
+      <div className="welcome-rays" aria-hidden="true">
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#c7c9ce"
+          raysSpeed={1.5}
+          lightSpread={0.8}
+          rayLength={2.6}
+          fadeDistance={2.4}
+          saturation={0}
+          followMouse={true}
+          mouseInfluence={0.1}
+          noiseAmount={0.1}
+          distortion={0.05}
+        />
       </div>
-      <dl className="stat-grid" aria-label="个人经历概览">
-        {stats.map((stat) => (
-          <div className="stat-item" key={stat.label}>
-            <dt>{stat.label}</dt>
-            <dd>{stat.value}</dd>
-          </div>
-        ))}
-      </dl>
+      <TechText
+        text="Hi, I'm Sixxxx"
+        fontWeight={600}
+        fontSize={138}
+        letterSpacing={0}
+        sweep={false}
+        reveal="letter"
+        dashLength={4}
+        dashGap={2}
+        specks={15}
+        accentColor="#3b9af6"
+        style={{ width: "100%", height: "100%" }}
+      />
+      <div className="welcome-actions" role="group" aria-label="欢迎页导航">
+        <button className="welcome-action" type="button" onClick={() => openApp("about")}>
+          了解我
+        </button>
+        <button className="welcome-action welcome-action-primary" type="button" onClick={() => openApp("work")}>
+          查看作品
+        </button>
+      </div>
     </article>
   );
 }
 
 function WorkApp() {
-  return (
-    <article className="app-view work-view">
-      <AppHeader
-        eyebrow="SELECTED WORK · 2024—2026"
-        title="代表作品"
-        intro="从问题定义到最终上线，这些项目记录了我如何与团队一起把复杂的事情向前推进。"
-      />
-      <div className="project-grid">
-        {portfolioContent.projects.map((project) => (
-          <article
-            className="project-card"
-            key={project.id}
-            style={{ "--project-accent": project.accent } as CSSProperties}
-          >
-            <div className="project-visual" aria-hidden="true">
-              <span className="project-number">{project.number}</span>
-              <span className="project-shape project-shape-one" />
-              <span className="project-shape project-shape-two" />
-            </div>
-            <div className="project-body">
-              <div className="project-meta">
-                <span>{project.category}</span>
-                <time>{project.year}</time>
-              </div>
-              <h3>{project.title}</h3>
-              <p>{project.summary}</p>
-              <strong className="project-outcome">{project.outcome}</strong>
-              <ul className="tag-list" aria-label={`${project.title}关键词`}>
-                {project.tags.map((tag) => (
-                  <li key={tag}>{tag}</li>
-                ))}
-              </ul>
-            </div>
-          </article>
-        ))}
-      </div>
-    </article>
-  );
+  return <WorkDisc />;
 }
 
 function AboutApp({ openApp }: Pick<AppContentProps, "openApp">) {

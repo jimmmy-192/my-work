@@ -5,6 +5,7 @@ import {
   MIN_HEIGHT,
   MIN_WIDTH,
   clampBounds,
+  clampVisibleBounds,
   createInitialOSState,
   osReducer,
 } from "../app/os/window-manager.ts";
@@ -95,6 +96,53 @@ test("clamps position and size inside a workspace", () => {
     ),
     { x: 404, y: 216, width: 620, height: 460 },
   );
+});
+
+test("allows flush and partial placement while keeping a draggable title bar visible", () => {
+  const area = { x: 12, y: 36, width: 1024, height: 640 };
+  const flush = { ...workBounds, x: area.x, y: area.y };
+  assert.deepEqual(clampVisibleBounds(flush, area), flush);
+  const partial = { ...workBounds, x: -200, y: 500 };
+  assert.deepEqual(clampVisibleBounds(partial, area), partial);
+
+  for (const x of [-10000, 10000]) {
+    for (const y of [-10000, 10000]) {
+      const fitted = clampVisibleBounds({ ...workBounds, x, y }, area);
+      const visibleWidth = Math.min(fitted.x + fitted.width, area.x + area.width) - Math.max(fitted.x, area.x);
+      const visibleTitleHeight = Math.min(fitted.y + 28, area.y + area.height) - Math.max(fitted.y, area.y);
+      assert.ok(visibleWidth >= 160, "enough title bar remains horizontally reachable");
+      assert.equal(visibleTitleHeight, 28, "title bar remains below the menu and above the Dock");
+      assert.equal(fitted.width, workBounds.width);
+      assert.equal(fitted.height, workBounds.height);
+    }
+  }
+});
+
+test("reachable placement adapts to a smaller workspace and app minimum size", () => {
+  assert.deepEqual(
+    clampVisibleBounds({ x: -9999, y: 9999, width: 500, height: 500 }, { x: 4, y: 8, width: 120, height: 20 }),
+    { x: 4, y: 8, width: 120, height: 20 },
+  );
+  const fitted = clampVisibleBounds(
+    { x: -200, y: 400, width: 100, height: 100 },
+    workspace,
+    { width: 620, height: 460 },
+  );
+  assert.deepEqual(fitted, { x: -200, y: 400, width: 620, height: 460 });
+  const empty = clampVisibleBounds(workBounds, { x: 0, y: 0, width: 0, height: 0 });
+  assert.deepEqual(empty, { x: 0, y: 0, width: 0, height: 0 });
+});
+
+test("maximize and restore preserve partial placement, while centering brings it fully back", () => {
+  const partial = { ...workBounds, x: -300, y: 500 };
+  let state = open(createInitialOSState(), "work", partial);
+  state = osReducer(state, { type: "TOGGLE_MAXIMIZE", appId: "work", workspace });
+  state = osReducer(state, { type: "TOGGLE_MAXIMIZE", appId: "work", workspace });
+  assert.deepEqual(state.windows.work.bounds, partial);
+  state = osReducer(state, { type: "CENTER_WINDOW", appId: "work", workspace });
+  const centered = state.windows.work.bounds;
+  assert.ok(centered.x >= workspace.x && centered.x + centered.width <= workspace.x + workspace.width);
+  assert.ok(centered.y >= workspace.y && centered.y + centered.height <= workspace.y + workspace.height);
 });
 
 test("move and resize enforce minimum dimensions and ignore maximized windows", () => {

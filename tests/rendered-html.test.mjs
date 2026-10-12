@@ -41,7 +41,14 @@ test("renders the complete MyOS portfolio shell", async () => {
   assert.match(html, /data-liquid-target="dock"/i);
   assert.match(html, /系统菜单栏/);
   assert.match(html, /应用程序 Dock/);
-  assert.match(html, /浏览作品/);
+  const welcomeView = html.match(/<article\b[^>]*class="welcome-tech-view"[^>]*>[\s\S]*?<\/article>/)?.[0];
+  assert.ok(welcomeView, "the welcome window contains the full-size TechText greeting");
+  assert.match(welcomeView, /aria-label="Hi, I&#x27;m Sixxxx"/);
+  assert.match(welcomeView, /<canvas\b/);
+  assert.match(welcomeView, /class="light-rays-container"/);
+  assert.match(welcomeView, /了解我/);
+  assert.match(welcomeView, /查看作品/);
+  assert.doesNotMatch(welcomeView, /<h[1-6]|<dl|welcome-portrait/);
   assert.match(html, /关于我/);
   assert.doesNotMatch(html, /桌面快捷方式/);
   assert.doesNotMatch(html, /单击打开 · 拖动窗口 · ⌘K 搜索/);

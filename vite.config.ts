@@ -45,6 +45,12 @@ export default defineConfig(async () => {
 
   return {
     base: process.env.GITHUB_ACTIONS && process.env.VERCEL !== "1" ? "/my-work/" : "/",
+    resolve: {
+      dedupe: ["react", "react-dom"],
+    },
+    optimizeDeps: {
+      include: ["ogl", "three"],
+    },
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,

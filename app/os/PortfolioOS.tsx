@@ -62,6 +62,7 @@ import {
   MIN_HEIGHT,
   MIN_WIDTH,
   clampBounds,
+  clampVisibleBounds,
   createInitialOSState,
   osReducer,
 } from "./window-manager";
@@ -96,7 +97,7 @@ interface DockRestingItem {
   motion: DockMotion;
 }
 
-const DEFAULT_WORKSPACE: Bounds = { x: 8, y: 8, width: 1180, height: 690 };
+const DEFAULT_WORKSPACE: Bounds = { x: 0, y: 0, width: 1196, height: 706 };
 const THEME_KEY = "myos-theme";
 const GLASS_KEY = "myos-glass";
 const DOCK_GLASS_KEY = "myos-dock-glass";
@@ -709,9 +710,15 @@ export function PortfolioOS() {
   useEffect(() => {
     const layer = windowLayerRef.current;
     if (!layer) return;
+    let initialPlacementPending = true;
     const measure = () => {
       const rect = layer.getBoundingClientRect();
-      setWorkspace({ x: 8, y: 8, width: Math.max(0, rect.width - 16), height: Math.max(0, rect.height - 16) });
+      const measuredWorkspace = { x: 0, y: 0, width: Math.max(0, rect.width), height: Math.max(0, rect.height) };
+      setWorkspace(measuredWorkspace);
+      if (initialPlacementPending && measuredWorkspace.width > 0 && measuredWorkspace.height > 0) {
+        initialPlacementPending = false;
+        dispatch({ type: "CENTER_WINDOW", appId: "welcome", workspace: measuredWorkspace });
+      }
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -824,7 +831,7 @@ export function PortfolioOS() {
       const definition = definitions.get(appId);
       if (!definition) return;
       const offset = Math.min(state.stack.length, 5) * 18;
-      const requested = clampBounds(
+      const fitted = clampBounds(
         {
           ...definition.defaultBounds,
           x: definition.defaultBounds.x + offset,
@@ -833,6 +840,13 @@ export function PortfolioOS() {
         workspace,
         definition.minSize,
       );
+      const requested = appId === "welcome"
+        ? {
+            ...fitted,
+            x: workspace.x + (workspace.width - fitted.width) / 2,
+            y: workspace.y + (workspace.height - fitted.height) / 2,
+          }
+        : fitted;
       dispatch({ type: "OPEN_APP", appId, bounds: requested });
       window.setTimeout(() => windowRefs.current[appId]?.focus(), 0);
     },
@@ -939,7 +953,7 @@ export function PortfolioOS() {
     if (windowState.status !== "normal") return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    const fitted = clampBounds(
+    const fitted = clampVisibleBounds(
       windowState.bounds,
       workspace,
       definitions.get(appId)?.minSize,
@@ -965,7 +979,7 @@ export function PortfolioOS() {
       dispatch({
         type: "MOVE_WINDOW",
         appId: gesture.appId,
-        bounds: clampBounds(
+        bounds: clampVisibleBounds(
           { ...gesture.startBounds, x: gesture.startBounds.x + dx, y: gesture.startBounds.y + dy },
           workspace,
         ),
@@ -991,7 +1005,7 @@ export function PortfolioOS() {
     dispatch({
       type: "RESIZE_WINDOW",
       appId: gesture.appId,
-      bounds: clampBounds(next, workspace, minimum),
+      bounds: clampVisibleBounds(next, workspace, minimum),
     });
   };
 
@@ -1010,7 +1024,7 @@ export function PortfolioOS() {
     }
     const step = 16;
     const minimum = definitions.get(appId)?.minSize;
-    const next = clampBounds(windowState.bounds, workspace, minimum);
+    const next = clampVisibleBounds(windowState.bounds, workspace, minimum);
     if (event.key === "Home") {
       event.preventDefault();
       dispatch({ type: "CENTER_WINDOW", appId, workspace });
@@ -1031,7 +1045,7 @@ export function PortfolioOS() {
       dispatch({
         type: "RESIZE_WINDOW",
         appId,
-        bounds: clampBounds(next, workspace, minimum),
+        bounds: clampVisibleBounds(next, workspace, minimum),
       });
     } else {
       if (event.key === "ArrowLeft") next.x -= step;
@@ -1041,7 +1055,7 @@ export function PortfolioOS() {
       dispatch({
         type: "MOVE_WINDOW",
         appId,
-        bounds: clampBounds(next, workspace, minimum),
+        bounds: clampVisibleBounds(next, workspace, minimum),
       });
     }
   };
@@ -1370,7 +1384,7 @@ export function PortfolioOS() {
               if (!windowState || !definition || windowState.status === "minimized") return null;
               const fitted = windowState.status === "maximized"
                 ? { ...workspace }
-                : clampBounds(windowState.bounds, workspace, definition.minSize);
+                : clampVisibleBounds(windowState.bounds, workspace, definition.minSize);
               const isActive = state.activeWindowId === appId;
               return (
                 <section
@@ -1411,7 +1425,6 @@ export function PortfolioOS() {
                       aria-label={`${definition.title}窗口。方向键移动，Shift 加方向键调整大小，回车缩放，Home 居中。`}
                       onKeyDown={(event) => handleTitleKey(event, appId, windowState)}
                     >
-                      <span aria-hidden="true"><AppIcon appId={appId} size={14} /></span>
                       {definition.title}
                     </button>
                     <span className="titlebar-spacer" />

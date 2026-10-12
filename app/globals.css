@@ -159,7 +159,8 @@ a:focus-visible,
   width: 100vw;
   height: 100dvh;
   min-height: 100svh;
-  overflow: hidden;
+  /* Partly off-screen windows must not scroll the desktop when controls focus. */
+  overflow: clip;
   color: var(--ink);
   color-scheme: light;
   background: var(--wallpaper-background);
@@ -903,7 +904,7 @@ a:focus-visible,
 }
 
 .os-window:not(.is-active) .window-titlebar {
-  background: color-mix(in srgb, var(--panel-soft) 62%, transparent);
+  background: transparent;
 }
 
 @keyframes window-in {
@@ -925,8 +926,8 @@ a:focus-visible,
   grid-template-columns: minmax(76px, 1fr) auto minmax(76px, 1fr);
   align-items: center;
   padding: 0 15px;
-  border-bottom: 1px solid var(--line-subtle);
-  background: var(--panel-soft);
+  border-bottom: 0;
+  background: transparent;
   cursor: default;
   touch-action: none;
   user-select: none;
@@ -1053,6 +1054,116 @@ a:focus-visible,
 .resize-sw { left: -3px; bottom: -3px; cursor: nesw-resize; }
 
 /* Application content ---------------------------------------------------- */
+.os-window[data-window-app="work"] {
+  --ink: #1c1c1e;
+  --panel: #fff;
+  --panel-strong: #fff;
+  overflow: clip;
+}
+
+.os-window[data-window-app="work"] .window-content {
+  background: #fff;
+  overflow: hidden;
+}
+
+.os-window[data-window-app="welcome"] {
+  --ink: #f5f5f7;
+  --panel: #0a0a0a;
+  --panel-strong: #0a0a0a;
+  --window-shadow: 0 34px 90px rgba(0, 0, 0, 0.25), 0 5px 18px rgba(0, 0, 0, 0.14);
+  border: 0;
+}
+
+.os-window[data-window-app="welcome"]:not(.is-active) {
+  box-shadow: 0 15px 42px rgba(0, 0, 0, 0.16);
+}
+
+.os-window[data-window-app="welcome"]::before {
+  display: none;
+}
+
+.os-window[data-window-app="welcome"] .window-content {
+  position: relative;
+  overflow: visible;
+  background: #0a0a0a;
+}
+
+.welcome-tech-view {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  background: #0a0a0a;
+}
+
+.welcome-rays {
+  position: absolute;
+  /* Continue the light behind the transparent title bar. */
+  inset: calc(-1 * var(--window-titlebar-height)) 0 0;
+  z-index: 0;
+  opacity: 1;
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 90%);
+  mask-image: linear-gradient(to bottom, #000 72%, transparent 90%);
+  pointer-events: none;
+}
+
+.welcome-tech-view > .tech-text {
+  z-index: 1;
+}
+
+.welcome-actions {
+  position: absolute;
+  z-index: 2;
+  top: calc(50% + clamp(52px, 9cqw, 76px) + 24px);
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.welcome-action {
+  min-width: 128px;
+  min-height: 40px;
+  padding: 9px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: #f5f5f7;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: var(--type-body);
+  font-weight: var(--weight-semibold);
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.welcome-action:hover {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateY(-1px);
+}
+
+.welcome-action-primary {
+  border-color: #e7e8eb;
+  color: #131416;
+  background: #e7e8eb;
+}
+
+.welcome-action-primary:hover {
+  border-color: #fff;
+  background: #fff;
+}
+
+.welcome-action:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.welcome-tech-view canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .app-view {
   width: 100%;
   min-width: 0;
@@ -1133,9 +1244,7 @@ a:focus-visible,
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background:
-    radial-gradient(circle at 92% 9%, color-mix(in srgb, var(--accent-bright) 17%, transparent), transparent 34%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.12), transparent 52%);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), transparent 52%);
 }
 
 .welcome-hero {
@@ -1172,93 +1281,44 @@ a:focus-visible,
 }
 
 .welcome-portrait {
-  position: relative;
-  isolation: isolate;
-  width: min(100%, 240px);
-  aspect-ratio: 1;
+  --dock-icon-size: clamp(130px, 25cqw, 190px);
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  justify-self: center;
+}
+
+.welcome-avatar {
+  width: var(--dock-icon-size);
+  height: var(--dock-icon-size);
   display: grid;
   place-items: center;
-  justify-self: center;
-  border: 1px solid rgba(255, 255, 255, 0.64);
-  border-radius: 50%;
-  color: #fff;
-  background:
-    radial-gradient(circle at 32% 24%, rgba(251, 255, 187, 0.98) 0 5%, transparent 26%),
-    radial-gradient(circle at 68% 67%, rgba(5, 82, 67, 0.82), transparent 56%),
-    linear-gradient(145deg, #b7e6aa, #46a680 52%, #145949);
-  box-shadow: inset 0 1px 12px rgba(255, 255, 255, 0.52), 0 28px 58px rgba(9, 74, 53, 0.23);
 }
 
-.welcome-portrait::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  width: 45%;
-  height: 45%;
-  top: 14%;
-  left: 16%;
-  border-radius: 43% 57% 62% 38%;
-  background: rgba(238, 255, 142, 0.32);
-  filter: blur(7px);
-  transform: rotate(24deg);
-}
-
-.welcome-portrait strong {
-  font-size: clamp(3.25rem, 8cqw, 5rem);
-  font-weight: var(--weight-bold);
-  letter-spacing: -0.03em;
-  text-shadow: 0 5px 20px rgba(0, 43, 30, 0.22);
+.welcome-portrait .welcome-avatar-art {
+  transform-origin: center;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.12));
 }
 
 .welcome-portrait small {
-  position: absolute;
-  right: 8%;
-  bottom: 11%;
-  max-width: 84%;
-  padding: 6px 10px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.58);
-  border-radius: 99px;
-  color: #173e31;
-  background: rgba(249, 255, 250, 0.78);
-  box-shadow: 0 7px 18px rgba(0, 48, 32, 0.12);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--muted);
   font-size: 0.625rem;
-  font-weight: var(--weight-semibold);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: var(--weight-medium);
+  text-align: center;
 }
 
-.portrait-orbit {
-  position: absolute;
-  z-index: -1;
-  inset: -8%;
-  border: 1px solid rgba(255, 255, 255, 0.44);
-  border-radius: 47% 53% 48% 52%;
-  pointer-events: none;
-}
-
-.portrait-orbit::after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  top: 17%;
-  right: 8%;
+.welcome-status-dot {
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
   border-radius: 50%;
-  background: #e8ff75;
-  box-shadow: 0 0 14px rgba(232, 255, 117, 0.72);
-}
-
-.portrait-orbit-one {
-  transform: rotate(21deg);
-}
-
-.portrait-orbit-two {
-  inset: -15% -8%;
-  opacity: 0.34;
-  transform: rotate(-32deg);
+  background: var(--accent);
 }
 
 .app-actions {
@@ -2311,14 +2371,18 @@ a:focus-visible,
     padding: 28px 22px 38px;
   }
 
-  .welcome-hero,
   .about-layout {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .welcome-hero {
+    grid-template-columns: minmax(0, 1fr) 130px;
+    gap: 20px;
+  }
+
   .welcome-portrait {
-    width: min(215px, 76%);
-    margin-top: 12px;
+    --dock-icon-size: 130px;
+    gap: 10px;
   }
 
   .principle-grid,
@@ -2335,6 +2399,16 @@ a:focus-visible,
   .app-view {
     padding-right: 18px;
     padding-left: 18px;
+  }
+
+  .welcome-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .welcome-portrait {
+    grid-row: 1;
+    width: 130px;
+    justify-self: start;
   }
 
   .stat-grid {
@@ -3427,7 +3501,6 @@ a:focus-visible,
   line-height: var(--leading-title-3);
 }
 
-.welcome-portrait strong,
 .profile-mark {
   font-weight: var(--weight-bold);
   letter-spacing: -0.03em;
@@ -3435,7 +3508,7 @@ a:focus-visible,
 
 .welcome-portrait small {
   font-size: var(--type-caption);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   line-height: var(--leading-caption);
 }
 
