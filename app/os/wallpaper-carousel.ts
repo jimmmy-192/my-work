@@ -1,13 +1,7 @@
+import wallpaperCatalog from "../../content/wallpapers.json" with { type: "json" };
+
 const publicBaseUrl =
   (import.meta as ImportMeta & { env?: { BASE_URL?: string } }).env?.BASE_URL ?? "/";
-
-export const PHOTO_WALLPAPERS = [
-  { id: "lake", name: "湖山倒影", url: `${publicBaseUrl}wallpapers/snow-mountain.jpg` },
-  { id: "garden", name: "庭院绿荫", url: `${publicBaseUrl}wallpapers/garden-canopy-upright.jpg` },
-  { id: "blue-folds", name: "深蓝折光", url: `${publicBaseUrl}wallpapers/blue-folds.png` },
-  { id: "palm-stars", name: "椰影星空", url: `${publicBaseUrl}wallpapers/palm-starry-night.jpg` },
-  { id: "tropical-shore", name: "碧海椰风", url: `${publicBaseUrl}wallpapers/tropical-shore.jpg` },
-] as const;
 
 export interface WallpaperPhoto {
   id: string;
@@ -17,13 +11,46 @@ export interface WallpaperPhoto {
   localAssetId?: string;
   width?: number;
   height?: number;
+  fit?: "viewport" | "wide";
+}
+
+export const WALLPAPER_CATALOG_REVISION = wallpaperCatalog.revision;
+export const PHOTO_WALLPAPERS: readonly WallpaperPhoto[] = wallpaperCatalog.photos.map((photo) => ({
+  id: photo.id,
+  name: photo.name,
+  url: `${publicBaseUrl}${photo.path}`,
+  width: photo.width,
+  height: photo.height,
+  fit: photo.fit === "viewport" ? "viewport" : "wide",
+}));
+export const DEFAULT_CONCEALED_WALLPAPER_IDS = wallpaperCatalog.photos.filter((photo) => photo.concealed).map((photo) => photo.id);
+const publishedIds = new Set(PHOTO_WALLPAPERS.map((photo) => photo.id));
+
+interface SavedWallpaperState {
+  custom: WallpaperPhoto[];
+  order: string[];
+  hidden: string[];
+  concealed: string[];
+}
+
+/** Adopt a published collection once, retaining unrelated personal uploads. */
+export function resolveWallpaperCatalogState(saved: SavedWallpaperState, revision: string | null): SavedWallpaperState {
+  const custom = saved.custom.filter((photo) => !publishedIds.has(photo.id));
+  if (revision === WALLPAPER_CATALOG_REVISION) return { ...saved, custom };
+  const personalIds = new Set(custom.map((photo) => photo.id));
+  return {
+    custom,
+    order: [...PHOTO_WALLPAPERS.map((photo) => photo.id), ...saved.order.filter((id) => personalIds.has(id))],
+    hidden: saved.hidden.filter((id) => personalIds.has(id)),
+    concealed: [...DEFAULT_CONCEALED_WALLPAPER_IDS, ...saved.concealed.filter((id) => personalIds.has(id))],
+  };
 }
 
 export const WALLPAPER_SLIDE_INTERVAL_MS = 60_000;
 
 export function getWallpaperPhotos(custom: WallpaperPhoto[], order: string[], hidden: string[] = []): WallpaperPhoto[] {
   const hiddenIds = new Set(hidden);
-  const all = [...PHOTO_WALLPAPERS, ...custom].filter((photo) => !hiddenIds.has(photo.id));
+  const all = [...PHOTO_WALLPAPERS, ...custom.filter((photo) => !publishedIds.has(photo.id))].filter((photo) => !hiddenIds.has(photo.id));
   const byId = new Map(all.map((photo) => [photo.id, photo]));
   const ordered = order.flatMap((id) => {
     const photo = byId.get(id);

@@ -34,7 +34,7 @@ import type {
 } from "./cloud-preferences";
 import { DOCK_ICON_SIZE, DOCK_MIN_SIZE, DOCK_MAX_SIZE, advanceDockMotion, getDockMagnification, getDockMagnificationForProximity } from "./dock-magnification";
 import type { DockMotion } from "./dock-magnification";
-import { AppIcon, MenuAppIcon, SystemIcon } from "./icons";
+import { AppIcon, DockAppIcon, MenuAppIcon, SystemIcon } from "./icons";
 import type { SystemIconName } from "./icons";
 import {
   isWallpaperPreference,
@@ -47,6 +47,9 @@ import { useLiquidGlass } from "./use-liquid-glass";
 import { formatMenuBarTime } from "./time";
 import {
   PHOTO_WALLPAPERS,
+  DEFAULT_CONCEALED_WALLPAPER_IDS,
+  WALLPAPER_CATALOG_REVISION,
+  resolveWallpaperCatalogState,
   WALLPAPER_SLIDE_INTERVAL_MS,
   getNextWallpaperSlide,
   getWallpaperPhotos,
@@ -104,6 +107,7 @@ const CUSTOM_WALLPAPERS_KEY = "myos-custom-wallpapers-v1";
 const WALLPAPER_ORDER_KEY = "myos-wallpaper-order-v1";
 const HIDDEN_WALLPAPERS_KEY = "myos-hidden-wallpapers-v1";
 const CONCEALED_WALLPAPERS_KEY = "myos-concealed-wallpapers-v1";
+const WALLPAPER_CATALOG_KEY = "myos-wallpaper-catalog-revision";
 const MENU_ORDER = ["myos", "go", "window", "help"] as const;
 const DOCK_APPS = appDefinitions.filter((app) => app.dock);
 type MenuId = (typeof MENU_ORDER)[number];
@@ -131,14 +135,15 @@ function getBrowserStorage() {
 }
 
 function readLocalWallpapers(storage: Storage | null) {
-  if (!storage) return { custom: [] as WallpaperPhoto[], order: [] as string[], hidden: [] as string[], concealed: [] as string[] };
+  const defaults = () => resolveWallpaperCatalogState({ custom: [], order: [], hidden: [], concealed: [] }, null);
+  if (!storage) return defaults();
 
   try {
     const custom = JSON.parse(storage.getItem(CUSTOM_WALLPAPERS_KEY) ?? "[]") as unknown;
     const order = JSON.parse(storage.getItem(WALLPAPER_ORDER_KEY) ?? "[]") as unknown;
     const hidden = JSON.parse(storage.getItem(HIDDEN_WALLPAPERS_KEY) ?? "[]") as unknown;
     const concealed = JSON.parse(storage.getItem(CONCEALED_WALLPAPERS_KEY) ?? "[]") as unknown;
-    return {
+    return resolveWallpaperCatalogState({
       custom: Array.isArray(custom)
         ? custom.filter(
             (photo): photo is WallpaperPhoto =>
@@ -163,9 +168,9 @@ function readLocalWallpapers(storage: Storage | null) {
       concealed: Array.isArray(concealed)
         ? concealed.filter((id): id is string => typeof id === "string")
         : [],
-    };
+    }, storage.getItem(WALLPAPER_CATALOG_KEY));
   } catch {
-    return { custom: [] as WallpaperPhoto[], order: [] as string[], hidden: [] as string[], concealed: [] as string[] };
+    return defaults();
   }
 }
 
@@ -186,7 +191,7 @@ export function PortfolioOS() {
   const [customWallpaperPhotos, setCustomWallpaperPhotos] = useState<WallpaperPhoto[]>([]);
   const [wallpaperOrder, setWallpaperOrder] = useState<string[]>([]);
   const [hiddenWallpaperIds, setHiddenWallpaperIds] = useState<string[]>([]);
-  const [concealedWallpaperIds, setConcealedWallpaperIds] = useState<string[]>([]);
+  const [concealedWallpaperIds, setConcealedWallpaperIds] = useState<string[]>(DEFAULT_CONCEALED_WALLPAPER_IDS);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [wallpaperStorageReady, setWallpaperStorageReady] = useState(false);
@@ -632,6 +637,7 @@ export function PortfolioOS() {
     writeStoredPreference(storage, WALLPAPER_ORDER_KEY, JSON.stringify(photoWallpapers.map((photo) => photo.id)));
     writeStoredPreference(storage, HIDDEN_WALLPAPERS_KEY, JSON.stringify(hiddenWallpaperIds));
     writeStoredPreference(storage, CONCEALED_WALLPAPERS_KEY, JSON.stringify(concealedWallpaperIds));
+    writeStoredPreference(storage, WALLPAPER_CATALOG_KEY, WALLPAPER_CATALOG_REVISION);
   }, [customWallpaperPhotos, photoWallpapers, hiddenWallpaperIds, concealedWallpaperIds, preferencesReady, wallpaperStorageReady]);
 
   useEffect(() => {
@@ -1235,6 +1241,7 @@ export function PortfolioOS() {
               key={photo.id}
               className={`wallpaper-photo-slide${displayedPhotoSlideIndex === index ? " is-active" : ""}`}
               data-custom={photo.custom ? "true" : undefined}
+              data-fit={photo.fit ?? (photo.custom ? "viewport" : "wide")}
               style={{ backgroundImage: `url("${photo.url}")` }}
             />
           ))}
@@ -1301,7 +1308,10 @@ export function PortfolioOS() {
             aria-label="快速打开应用"
             onClick={openSearch}
           >
-            <SystemIcon name="search" size={15} />
+            <svg className="menu-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+              <circle cx="10" cy="10" r="7.3" stroke="currentColor" strokeWidth="1.9" />
+              <path d="M15.5 15.5 21 21" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            </svg>
           </button>
           <time suppressHydrationWarning>{clock}</time>
         </div>
@@ -1333,7 +1343,7 @@ export function PortfolioOS() {
                 <span className="menu-item-icon" aria-hidden="true">
                   {item.icon.kind === "system"
                     ? <SystemIcon name={item.icon.name} size={14} strokeWidth={1.35} />
-                    : <MenuAppIcon appId={item.icon.appId} />}
+                    : <DockAppIcon appId={item.icon.appId} className="menu-dock-art" />}
                 </span>
                 <span className="menu-item-label">{item.label}</span>
                 {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}

@@ -13,7 +13,7 @@ test("sizes every custom Dock artwork from the adjustable shared frame", () => {
 });
 
 test("applies the reviewed optical corrections without changing hit areas", () => {
-  assert.match(css, /\.dock-character-art \{[^}]*--dock-art-optical-scale: 1\.18;/);
+  assert.match(css, /\.dock-character-art \{[^}]*--dock-art-optical-scale: 0\.94;/);
   assert.match(css, /\.dock-works-art \{\s*--dock-art-optical-scale: 0\.84;/);
   assert.match(css, /\.dock-contact-art \{\s*--dock-art-optical-scale: 0\.93;/);
   assert.match(css, /\.dock-trash-art \{\s*--dock-art-optical-scale: 0\.98;[^}]*transform: scale\(var\(--dock-art-optical-scale\)\);/);

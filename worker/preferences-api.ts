@@ -1,9 +1,11 @@
+import wallpaperCatalog from "../content/wallpapers.json" with { type: "json" };
+
 const USER_ID_HEADER = "oai-authenticated-user-id";
 const USER_EMAIL_HEADER = "oai-authenticated-user-email";
 const USER_FULL_NAME_HEADER = "oai-authenticated-user-full-name";
 const USER_FULL_NAME_ENCODING_HEADER = "oai-authenticated-user-full-name-encoding";
 const MAX_WALLPAPER_BYTES = 4 * 1024 * 1024;
-const BUILTIN_WALLPAPER_IDS = ["lake", "garden", "blue-folds"];
+const BUILTIN_WALLPAPER_IDS = wallpaperCatalog.photos.map((photo) => photo.id);
 const VALID_THEMES = new Set(["system", "light", "dark"]);
 const VALID_GLASS = new Set(["clear", "standard", "readable"]);
 const VALID_WALLPAPERS = new Set(["mountain"]);

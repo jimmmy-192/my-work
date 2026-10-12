@@ -326,6 +326,7 @@ function WallpaperGroup({
             <li
               key={photo.id}
               draggable
+              data-wallpaper-id={photo.id}
               className={[draggedId === photo.id ? "is-dragging" : "", concealed.has(photo.id) ? "is-hidden" : ""].filter(Boolean).join(" ")}
               onDragStart={() => setDraggedId(photo.id)}
               onDragEnd={() => setDraggedId(null)}
@@ -392,7 +393,7 @@ function SettingsApp({
       <AppHeader
         eyebrow="PREFERENCES"
         title="外观设置"
-        intro="登录后，主题、玻璃效果、壁纸与轮播顺序会自动同步到你的其他设备。"
+        intro={cloudSyncStatus === "unavailable" ? "默认壁纸随网站更新，你也可以调整自己的桌面。" : "登录后，主题、玻璃效果、壁纸与轮播顺序会自动同步到你的其他设备。"}
       />
       <div className={`settings-sync settings-sync-${cloudSyncStatus}`} role="status">
         <span className="settings-sync-dot" aria-hidden="true" />
@@ -402,7 +403,7 @@ function SettingsApp({
             {cloudSyncStatus === "saving" ? "正在保存到云端" : null}
             {cloudSyncStatus === "synced" ? "已保存到云端" : null}
             {cloudSyncStatus === "signed-out" ? "登录后开启跨设备同步" : null}
-            {cloudSyncStatus === "unavailable" ? "当前使用本机保存" : null}
+            {cloudSyncStatus === "unavailable" ? "当前浏览器保存" : null}
             {cloudSyncStatus === "error" ? "云端暂时未保存" : null}
           </strong>
           <small>
@@ -411,7 +412,7 @@ function SettingsApp({
               : cloudSyncStatus === "signed-out"
                 ? "当前设置仍会安全保留在这台设备"
                 : cloudSyncStatus === "unavailable"
-                  ? "在 ChatGPT Site 中打开即可使用云同步"
+                  ? "默认壁纸在所有浏览器可用；新上传的图片与个人调整仅在当前浏览器生效。"
                   : cloudSyncStatus === "error"
                     ? "已保留本机副本，稍后修改时会再次尝试"
                     : "主题和壁纸会自动保持一致"}

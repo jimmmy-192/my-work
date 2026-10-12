@@ -1,0 +1,66 @@
+{
+  "revision": "2026-09-29-curated-v1",
+  "photos": [
+    {
+      "id": "custom-f3d187fa-344f-4c66-886d-29c37b608484",
+      "name": "ChatGPT 图像 2026年9月29日 14_08_09",
+      "concealed": false,
+      "path": "wallpapers/curated-f3d187fa-344f-4c66-886d-29c37b608484.jpg",
+      "fit": "viewport",
+      "width": 1774,
+      "height": 887
+    },
+    {
+      "id": "custom-debf8c32-a017-4544-b090-5718cfb016e8",
+      "name": "ChatGPT 图像 2026年9月29日 14_24_06-4",
+      "concealed": false,
+      "path": "wallpapers/curated-debf8c32-a017-4544-b090-5718cfb016e8.jpg",
+      "fit": "viewport",
+      "width": 1774,
+      "height": 887
+    },
+    {
+      "id": "blue-folds",
+      "name": "深蓝折光",
+      "concealed": true,
+      "path": "wallpapers/blue-folds.png",
+      "fit": "wide"
+    },
+    {
+      "id": "custom-cd1f9405-66c5-415d-92bf-7006400d6f4e",
+      "name": "ChatGPT 图像 2026年9月29日 14_24_03-1",
+      "concealed": false,
+      "path": "wallpapers/curated-cd1f9405-66c5-415d-92bf-7006400d6f4e.jpg",
+      "fit": "viewport",
+      "width": 1774,
+      "height": 887
+    },
+    {
+      "id": "custom-d43b1dc8-d7c2-4fab-aae1-df73de6d5971",
+      "name": "ChatGPT 图像 2026年9月29日 14_37_25-2",
+      "concealed": false,
+      "path": "wallpapers/curated-d43b1dc8-d7c2-4fab-aae1-df73de6d5971.jpg",
+      "fit": "viewport",
+      "width": 1774,
+      "height": 887
+    },
+    {
+      "id": "custom-6cabeff2-1178-44e7-8131-14c21a08e486",
+      "name": "ChatGPT 图像 2026年9月29日 14_37_24-1",
+      "concealed": false,
+      "path": "wallpapers/curated-6cabeff2-1178-44e7-8131-14c21a08e486.jpg",
+      "fit": "viewport",
+      "width": 1774,
+      "height": 887
+    },
+    {
+      "id": "custom-b2b2f701-4b7f-4cbc-9f19-8c38ba15864c",
+      "name": "ChatGPT 图像 2026年9月29日 14_24_04-2",
+      "concealed": true,
+      "path": "wallpapers/curated-b2b2f701-4b7f-4cbc-9f19-8c38ba15864c.jpg",
+      "fit": "viewport",
+      "width": 1774,
+      "height": 887
+    }
+  ]
+}

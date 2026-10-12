@@ -125,11 +125,11 @@ a:focus-visible,
   --menu-bar-icon-filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
   --menu-control-hover: rgba(0, 0, 0, 0.18);
   --menu-control-active: rgba(0, 0, 0, 0.28);
-  --menu-popover-surface: rgba(246, 249, 250, 0.78);
+  --menu-popover-surface: rgba(246, 249, 250, 0.58);
   --menu-popover-ink: #272929;
-  --menu-popover-highlight: rgba(255, 255, 255, 0.08);
+  --menu-popover-highlight: rgba(255, 255, 255, 0.05);
   --menu-popover-edge: rgba(0, 0, 0, 0.22);
-  --menu-popover-filter: blur(24px) saturate(130%);
+  --menu-popover-filter: blur(18px) saturate(150%);
   --menu-popover-shadow: 0 10px 24px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.08), inset 0 0 0 0.5px rgba(255, 255, 255, 0.8);
   --menu-separator: rgba(0, 0, 0, 0.12);
   --menu-selection: #629cf8;
@@ -177,11 +177,11 @@ a:focus-visible,
   --bar: rgba(10, 34, 27, 0.56);
   --menu-control-hover: rgba(0, 0, 0, 0.2);
   --menu-control-active: rgba(0, 0, 0, 0.3);
-  --menu-popover-surface: rgba(36, 38, 40, 0.8);
+  --menu-popover-surface: rgba(36, 38, 40, 0.62);
   --menu-popover-ink: #f5f5f7;
   --menu-popover-highlight: rgba(255, 255, 255, 0.025);
   --menu-popover-edge: rgba(0, 0, 0, 0.5);
-  --menu-popover-filter: blur(24px) saturate(125%);
+  --menu-popover-filter: blur(18px) saturate(140%);
   --menu-popover-shadow: 0 10px 24px rgba(0, 0, 0, 0.38), 0 1px 3px rgba(0, 0, 0, 0.16), inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
   --menu-separator: rgba(255, 255, 255, 0.12);
   --menu-selection: #356bba;
@@ -327,8 +327,8 @@ a:focus-visible,
   --bar: rgba(238, 251, 244, 0.38);
   --menu-control-hover: rgba(0, 0, 0, 0.16);
   --menu-control-active: rgba(0, 0, 0, 0.26);
-  --menu-popover-surface: rgba(246, 249, 250, 0.68);
-  --menu-popover-filter: blur(24px) saturate(140%);
+  --menu-popover-surface: rgba(246, 249, 250, 0.42);
+  --menu-popover-filter: blur(16px) saturate(150%);
   --card: rgba(255, 255, 255, 0.2);
   --glass-filter: blur(24px) saturate(172%);
   --glass-filter-soft: blur(18px) saturate(165%);
@@ -338,8 +338,8 @@ a:focus-visible,
   --panel: rgba(10, 35, 27, 0.52);
   --panel-strong: rgba(11, 29, 23, 0.78);
   --bar: rgba(8, 31, 24, 0.4);
-  --menu-popover-surface: rgba(36, 38, 40, 0.68);
-  --menu-popover-filter: blur(24px) saturate(135%);
+  --menu-popover-surface: rgba(36, 38, 40, 0.48);
+  --menu-popover-filter: blur(16px) saturate(140%);
   --card: rgba(255, 255, 255, 0.055);
 }
 
@@ -439,8 +439,8 @@ a:focus-visible,
   }
 }
 
-/* Uploaded photos fit the actual screen without the built-in wide composition. */
-.wallpaper-photo-slide[data-custom="true"] {
+/* Preserve uploaded composition when a photo becomes a published default. */
+.wallpaper-photo-slide[data-fit="viewport"] {
   inset-inline: 0;
   background-position: center;
 }
@@ -633,6 +633,11 @@ a:focus-visible,
   filter: var(--menu-bar-icon-filter);
 }
 
+.menu-bar .menu-search-icon {
+  opacity: 0.92;
+  filter: none;
+}
+
 .menu-monogram-mark {
   position: relative;
   display: block;
@@ -767,6 +772,12 @@ a:focus-visible,
 
 .menu-item-icon svg {
   display: block;
+}
+
+.menu-item-icon .menu-dock-art {
+  --dock-icon-size: 20px;
+  transform-origin: center;
+  filter: drop-shadow(0 0.5px 0.5px rgba(0, 0, 0, 0.12));
 }
 
 .menu-item-label {
@@ -2724,9 +2735,9 @@ a:focus-visible,
   }
 
   .dock-character-art {
-    /* Narrow silhouettes need more height to carry the same visual weight. */
-    --dock-art-optical-scale: 1.18;
-    background: url("/icons/about-character.png") center / contain no-repeat;
+    /* The portrait has more visual mass than the full-body silhouette. */
+    --dock-art-optical-scale: 0.94;
+    background: url("/icons/about-portrait.png") center / contain no-repeat;
   }
 
   .dock-welcome-art {

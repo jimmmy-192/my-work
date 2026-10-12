@@ -119,6 +119,21 @@ export function MenuAppIcon({ appId }: Pick<AppIconProps, "appId">) {
   return <IconGlyph icon={icon} size={size} strokeWidth={1.35} />;
 }
 
+const DOCK_ART_CLASSES: Partial<Record<AppId, string>> = {
+  welcome: "dock-welcome-art",
+  work: "dock-works-art",
+  about: "dock-character-art",
+  contact: "dock-contact-art",
+  trash: "dock-trash-art",
+};
+
+// Reuse Dock artwork and optical sizing; the context controls its frame size.
+export function DockAppIcon({ appId, className }: Pick<AppIconProps, "appId" | "className">) {
+  const artworkClass = DOCK_ART_CLASSES[appId];
+  if (!artworkClass) return <MenuAppIcon appId={appId} />;
+  return <span className={[artworkClass, className].filter(Boolean).join(" ")} aria-hidden="true" />;
+}
+
 export function SystemIcon({
   name,
   size = 16,
