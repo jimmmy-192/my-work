@@ -154,7 +154,7 @@ export const appDefinitions: AppDefinition[] = [
     desktop: true,
     dock: true,
     description: "三个代表性的产品与体验设计项目",
-    defaultBounds: { x: 196, y: 72, width: 900, height: 640 },
+    defaultBounds: { x: 0, y: 0, width: 1230, height: 740 },
     minSize: { width: 620, height: 460 },
   },
   {

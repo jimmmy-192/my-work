@@ -840,7 +840,7 @@ export function PortfolioOS() {
         workspace,
         definition.minSize,
       );
-      const requested = appId === "welcome"
+      const requested = appId === "welcome" || appId === "work"
         ? {
             ...fitted,
             x: workspace.x + (workspace.width - fitted.width) / 2,

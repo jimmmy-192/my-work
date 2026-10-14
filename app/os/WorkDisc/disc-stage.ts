@@ -26,7 +26,7 @@ const softAngle = (angle: number) => {
 function createHoverRing() {
   const root = new THREE.Group();
   const material = new THREE.MeshBasicMaterial({
-    color: "#202329", transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide,
+    color: "#202329", transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
   });
   const segments = 100;
   const geometries = [0, 1].map(() => {
@@ -48,18 +48,40 @@ function createHoverRing() {
     update(frame: number, amount: number) {
       root.visible = amount > 0.002;
       material.opacity = amount * 0.8;
+      // A stable seed keeps each ink drawing intact until the next 10 Hz frame.
+      let seed = Math.imul(frame + 1, 0x9e3779b1);
+      const random = () => {
+        seed ^= seed << 13;
+        seed ^= seed >>> 17;
+        seed ^= seed << 5;
+        return (seed >>> 0) / 0x100000000;
+      };
+      const offsetX = (random() - 0.5) * 0.022;
+      const offsetY = (random() - 0.5) * 0.022;
+      const scale = 1 + (random() - 0.5) * 0.018;
       geometries.forEach((geometry, loop) => {
         const positions = geometry.getAttribute("position");
-        const phase = Math.sin(frame * 1.7 + loop * 4) * 0.15 + loop * 2.6;
-        const span = Math.PI * (1.68 + loop * 0.08) * Math.min(1, amount * 1.8);
+        const phase = random() * Math.PI * 2;
+        const span = Math.PI * (1.35 + random() * 0.32) * Math.min(1, amount * 1.8);
+        const knots = 24;
+        const radii = Array.from({ length: knots + 1 }, () => (random() - 0.5) * 0.044);
+        const pressures = Array.from({ length: knots + 1 }, () => 0.4 + random() * 1.45);
+        const centerX = offsetX + (random() - 0.5) * 0.006;
+        const centerY = offsetY + (random() - 0.5) * 0.006;
         for (let i = 0; i <= segments; i += 1) {
           const t = i / segments;
           const angle = phase + span * t;
-          const jitter = Math.sin(angle * 9 + frame * 0.8 + loop) * 0.007 + Math.cos(angle * 17 - frame) * 0.003;
-          const radius = 1.052 + loop * 0.027 + jitter;
-          const thickness = 0.0028 * Math.min(1, t * 12 + 0.25, (1 - t) * 12 + 0.25);
-          positions.setXYZ(i * 2, Math.cos(angle) * (radius - thickness), Math.sin(angle) * (radius - thickness), 0.035);
-          positions.setXYZ(i * 2 + 1, Math.cos(angle) * (radius + thickness), Math.sin(angle) * (radius + thickness), 0.035);
+          const sample = t * knots;
+          const from = Math.min(knots - 1, Math.floor(sample));
+          const fraction = sample - from;
+          const blend = fraction * fraction * (3 - 2 * fraction);
+          const jitter = radii[from] + (radii[from + 1] - radii[from]) * blend;
+          const pressure = pressures[from] + (pressures[from + 1] - pressures[from]) * blend;
+          const radius = (1.052 + loop * 0.06) * scale + jitter;
+          const taper = Math.min(1, t * 14 + 0.1, (1 - t) * 14 + 0.1);
+          const thickness = 0.004 * pressure * taper;
+          positions.setXYZ(i * 2, centerX + Math.cos(angle) * (radius - thickness), centerY + Math.sin(angle) * (radius - thickness), 0.035);
+          positions.setXYZ(i * 2 + 1, centerX + Math.cos(angle) * (radius + thickness), centerY + Math.sin(angle) * (radius + thickness), 0.035);
         }
         positions.needsUpdate = true;
       });
