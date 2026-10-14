@@ -2,9 +2,55 @@ import * as THREE from "three";
 import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
 
 const RADIUS = 1;
+const FACE_RADIUS = 0.974;
 const HALF_THICKNESS = 0.007;
 const HOLE_RADIUS = 0.14;
 const HUB_RADIUS = 0.242;
+
+const COVER_VARIANTS = [
+  {
+    ink: ["#23313f", "#101c29", "#17202b"],
+    silver: ["#edf0ee", "#bdc7cd", "#eff0ed", "#718999", "#bac4c8"],
+    fold: ["#526b80", "#a8b7c2", "#dce2e1", "#527188"],
+    angle: 0, stretch: 1, shift: 0,
+  },
+  {
+    ink: ["#283a33", "#162923", "#202e28"],
+    silver: ["#e7ece5", "#b5c5b9", "#e4e8df", "#78978b", "#bac8bf"],
+    fold: ["#607c6d", "#a6bbae", "#d8e1d7", "#668575"],
+    angle: -0.26, stretch: 1.07, shift: -80,
+  },
+  {
+    ink: ["#3c3038", "#2a1e28", "#30242e"],
+    silver: ["#e9e5e7", "#c7b9c4", "#eee9e8", "#9b7e90", "#c7bcc2"],
+    fold: ["#88677a", "#bea8b7", "#e1d8dc", "#8d6e83"],
+    angle: 0.22, stretch: 0.93, shift: 90,
+  },
+  {
+    ink: ["#3b362c", "#28241c", "#302c23"],
+    silver: ["#eee9df", "#cdc2ac", "#efe9dc", "#a08d69", "#cfc5b2"],
+    fold: ["#8a785b", "#c7b89d", "#e4ddcd", "#9d8965"],
+    angle: -0.37, stretch: 0.94, shift: 110,
+  },
+  {
+    ink: ["#353b40", "#20262c", "#2a3035"],
+    silver: ["#ecefed", "#bec7cb", "#eef0ee", "#83939e", "#c4cdd0"],
+    fold: ["#647780", "#b0bdc3", "#dce3e3", "#768c96"],
+    angle: 0.34, stretch: 1.08, shift: -100,
+  },
+] as const;
+
+export interface DiscModelOptions {
+  /** Palette and printed fold arrangement, normalized to one of five covers. */
+  variant?: number;
+  artwork?: HTMLImageElement;
+}
+
+function coverIndex(variant: number) {
+  return Number.isFinite(variant)
+    ? ((Math.trunc(variant) % COVER_VARIANTS.length) + COVER_VARIANTS.length) % COVER_VARIANTS.length
+    : 0;
+}
 
 function canvas(size: number, height = size) {
   const element = document.createElement("canvas");
@@ -30,23 +76,43 @@ function textureFromCanvas(element: HTMLCanvasElement, color = true) {
 }
 
 /** Original printed artwork, rather than a placeholder photograph on a circle. */
-function createCoverTexture() {
-  const size = 2048;
+function createCoverTexture(index: number, artwork?: HTMLImageElement) {
+  if (artwork) {
+    const size = 2048;
+    const { element, context } = canvas(size);
+    context.fillStyle = "#000";
+    context.fillRect(0, 0, size, size);
+    // Keep the landscape artwork proportional and its text above the metal hub.
+    const width = size * 0.94;
+    const height = width * artwork.naturalHeight / artwork.naturalWidth;
+    context.drawImage(artwork, (size - width) / 2, size * 0.08, width, height);
+    return textureFromCanvas(element);
+  }
+  const size = 1024;
+  const artworkSize = 2048;
+  const palette = COVER_VARIANTS[index];
   const { element, context: ctx } = canvas(size);
-  const base = ctx.createLinearGradient(0, 0, size, size);
-  base.addColorStop(0, "#23313f");
-  base.addColorStop(0.55, "#101c29");
-  base.addColorStop(1, "#17202b");
+  // Preserve the original drawing coordinates while keeping GPU textures compact.
+  ctx.scale(size / artworkSize, size / artworkSize);
+  const base = ctx.createLinearGradient(0, 0, artworkSize, artworkSize);
+  base.addColorStop(0, palette.ink[0]);
+  base.addColorStop(0.55, palette.ink[1]);
+  base.addColorStop(1, palette.ink[2]);
   ctx.fillStyle = base;
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillRect(0, 0, artworkSize, artworkSize);
 
   // Two continuous folds of printed silver, with ample space around the hub.
+  ctx.save();
+  ctx.translate(artworkSize / 2, artworkSize / 2);
+  ctx.rotate(palette.angle);
+  ctx.scale(palette.stretch, 1 / palette.stretch);
+  ctx.translate(-artworkSize / 2, -artworkSize / 2 + palette.shift);
   const silver = ctx.createLinearGradient(380, 230, 1630, 1760);
-  silver.addColorStop(0, "#edf0ee");
-  silver.addColorStop(0.28, "#bdc7cd");
-  silver.addColorStop(0.55, "#eff0ed");
-  silver.addColorStop(0.78, "#718999");
-  silver.addColorStop(1, "#bac4c8");
+  silver.addColorStop(0, palette.silver[0]);
+  silver.addColorStop(0.28, palette.silver[1]);
+  silver.addColorStop(0.55, palette.silver[2]);
+  silver.addColorStop(0.78, palette.silver[3]);
+  silver.addColorStop(1, palette.silver[4]);
   ctx.fillStyle = silver;
   ctx.beginPath();
   ctx.moveTo(-280, 1290);
@@ -59,10 +125,10 @@ function createCoverTexture() {
   ctx.fill();
 
   const fold = ctx.createLinearGradient(420, 1410, 1950, 400);
-  fold.addColorStop(0, "#526b80");
-  fold.addColorStop(0.48, "#a8b7c2");
-  fold.addColorStop(0.7, "#dce2e1");
-  fold.addColorStop(1, "#527188");
+  fold.addColorStop(0, palette.fold[0]);
+  fold.addColorStop(0.48, palette.fold[1]);
+  fold.addColorStop(0.7, palette.fold[2]);
+  fold.addColorStop(1, palette.fold[3]);
   ctx.fillStyle = fold;
   ctx.beginPath();
   ctx.moveTo(140, 1940);
@@ -83,6 +149,7 @@ function createCoverTexture() {
     ctx.bezierCurveTo(1640, 860 + i * 10, 1490, 350, 2070, 40 + i * 10);
     ctx.stroke();
   }
+  ctx.restore();
 
   ctx.fillStyle = "#e4e9e9";
   ctx.font = "500 144px Arial, Helvetica, sans-serif";
@@ -99,9 +166,10 @@ function createCoverTexture() {
   ctx.stroke();
   ctx.font = "400 72px Arial, Helvetica, sans-serif";
   ctx.fillStyle = "#ecf0ef";
-  ctx.fillText("01", 1480, 1445);
+  ctx.fillText(String(index + 1).padStart(2, "0"), 1480, 1445);
 
-  const random = randomGenerator(2741);
+  const random = randomGenerator(2741 + index * 97);
+  // ImageData uses physical pixels and deliberately ignores the drawing transform.
   const grain = ctx.getImageData(0, 0, size, size);
   for (let i = 0; i < grain.data.length; i += 4) {
     const noise = (random() - 0.5) * 8;
@@ -170,8 +238,42 @@ function createBackTexture() {
   ctx.fillStyle = "rgba(43,51,59,0.46)";
   ctx.textAlign = "center";
   ctx.font = "500 25px Arial, Helvetica, sans-serif";
-  ctx.fillText("SIXXXX / 01", center, center - 210);
+  ctx.fillText("SIXXXX / SELECTED WORK", center, center - 210);
   return textureFromCanvas(element);
+}
+
+interface SharedDiscTextures {
+  back: THREE.CanvasTexture;
+  roughness: THREE.CanvasTexture;
+  normal: THREE.CanvasTexture;
+  references: number;
+}
+
+// Lazily created inside the client effect, and released when the last disc leaves.
+let sharedDiscTextures: SharedDiscTextures | null = null;
+
+function acquireSharedTextures(): SharedDiscTextures {
+  if (!sharedDiscTextures) {
+    const back = createBackTexture();
+    try {
+      const surface = createSurfaceTextures();
+      sharedDiscTextures = { back, ...surface, references: 0 };
+    } catch (error) {
+      back.dispose();
+      throw error;
+    }
+  }
+  sharedDiscTextures.references += 1;
+  return sharedDiscTextures;
+}
+
+function releaseSharedTextures(textures: SharedDiscTextures) {
+  textures.references -= 1;
+  if (textures.references !== 0) return;
+  if (sharedDiscTextures === textures) sharedDiscTextures = null;
+  textures.back.dispose();
+  textures.roughness.dispose();
+  textures.normal.dispose();
 }
 
 /** RingGeometry's default UVs depend on its outer radius; all layers share disc UVs. */
@@ -185,134 +287,157 @@ function annulus(inner: number, outer: number) {
   return geometry;
 }
 
-export function createDiscModel(): { root: THREE.Group; dispose(): void } {
+export function createDiscModel({ variant = 0, artwork }: DiscModelOptions = {}): { root: THREE.Group; dispose(): void } {
+  const index = coverIndex(variant);
   const root = new THREE.Group();
-  root.name = "Sixxxx physical disc";
+  root.name = `Sixxxx physical disc ${String(index + 1).padStart(2, "0")}`;
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
-  const cover = createCoverTexture();
-  const back = createBackTexture();
-  const surface = createSurfaceTextures();
-  const textures = [cover, back, surface.roughness, surface.normal];
-
-  const addRing = (inner: number, outer: number, z: number, material: THREE.Material, rear = false) => {
-    const geometry = annulus(inner, outer);
-    geometries.add(geometry);
-    materials.add(material);
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.z = z;
-    if (rear) mesh.rotation.y = Math.PI;
-    root.add(mesh);
-    return mesh;
-  };
-
-  const printed = new THREE.MeshPhysicalMaterial({
-    map: cover,
-    metalness: 0.25,
-    roughness: 0.43,
-    roughnessMap: surface.roughness,
-    normalMap: surface.normal,
-    normalScale: new THREE.Vector2(0.16, 0.16),
-    clearcoat: 0.65,
-    clearcoatRoughness: 0.26,
-    envMapIntensity: 0.48,
-    iridescence: 0.06,
-    iridescenceIOR: 1.35,
-    iridescenceThicknessRange: [140, 240],
-  });
-  addRing(HUB_RADIUS, 0.991, HALF_THICKNESS, printed);
-
-  const recorded = new THREE.MeshPhysicalMaterial({
-    map: back,
-    metalness: 0.98,
-    roughness: 0.23,
-    roughnessMap: surface.roughness,
-    normalMap: surface.normal,
-    normalScale: new THREE.Vector2(0.13, 0.13),
-    clearcoat: 0.7,
-    clearcoatRoughness: 0.12,
-    iridescence: 0.48,
-    iridescenceIOR: 1.32,
-    iridescenceThicknessRange: [120, 390],
-    envMapIntensity: 0.95,
-  });
-  addRing(HUB_RADIUS, 0.991, -HALF_THICKNESS, recorded, true);
-
-  const rimMaterial = new THREE.MeshPhysicalMaterial({
-    color: "#b8c1c7",
-    metalness: 0.9,
-    roughness: 0.21,
-    clearcoat: 0.65,
-    clearcoatRoughness: 0.12,
-    envMapIntensity: 0.8,
-    side: THREE.DoubleSide,
-  });
-  const rimProfile = [
-    new THREE.Vector2(0.991, -HALF_THICKNESS),
-    new THREE.Vector2(0.997, -0.0056),
-    new THREE.Vector2(RADIUS, -0.0024),
-    new THREE.Vector2(RADIUS, 0.0024),
-    new THREE.Vector2(0.997, 0.0056),
-    new THREE.Vector2(0.991, HALF_THICKNESS),
-  ];
-  const rimGeometry = new THREE.LatheGeometry(rimProfile, 192);
-  rimGeometry.rotateX(Math.PI / 2);
-  geometries.add(rimGeometry);
-  materials.add(rimMaterial);
-  root.add(new THREE.Mesh(rimGeometry, rimMaterial));
-
-  const reflectiveHub = new THREE.MeshPhysicalMaterial({
-    color: "#aeb7bd", metalness: 0.94, roughness: 0.2,
-    clearcoat: 0.8, clearcoatRoughness: 0.11, envMapIntensity: 0.9,
-  });
-  const frostedHub = new THREE.MeshPhysicalMaterial({
-    color: "#d3d9dc", metalness: 0.22, roughness: 0.46,
-    clearcoat: 0.65, clearcoatRoughness: 0.24, envMapIntensity: 0.7,
-  });
-  const plasticHub = new THREE.MeshPhysicalMaterial({
-    color: "#dbe2e4", metalness: 0, roughness: 0.22,
-    transmission: 0.55, thickness: 0.018, ior: 1.47,
-    transparent: true, opacity: 0.54, depthWrite: false,
-    clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 0.8,
-    side: THREE.DoubleSide,
-  });
-  const fineEdge = new THREE.MeshPhysicalMaterial({
-    color: "#d3dadd", metalness: 0.92, roughness: 0.16,
-    clearcoat: 1, envMapIntensity: 0.85,
-  });
-
-  for (const rear of [false, true]) {
-    const sign = rear ? -1 : 1;
-    addRing(0.188, HUB_RADIUS, sign * 0.0058, reflectiveHub, rear);
-    addRing(0.17, 0.188, sign * 0.0065, frostedHub, rear);
-    addRing(HOLE_RADIUS, 0.17, sign * 0.0065, plasticHub, rear);
-    addRing(0.237, 0.242, sign * 0.0073, fineEdge, rear);
-    addRing(0.186, 0.189, sign * 0.0073, fineEdge, rear);
-    addRing(HOLE_RADIUS, 0.144, sign * 0.0073, fineEdge, rear);
+  const cover = createCoverTexture(index, artwork);
+  let shared: SharedDiscTextures;
+  try {
+    shared = acquireSharedTextures();
+  } catch (error) {
+    cover.dispose();
+    throw error;
   }
-
-  const holeGeometry = new THREE.LatheGeometry([
-    new THREE.Vector2(0.144, -0.007),
-    new THREE.Vector2(HOLE_RADIUS, -0.004),
-    new THREE.Vector2(HOLE_RADIUS, 0.004),
-    new THREE.Vector2(0.144, 0.007),
-  ], 128);
-  holeGeometry.rotateX(Math.PI / 2);
-  geometries.add(holeGeometry);
-  root.add(new THREE.Mesh(holeGeometry, rimMaterial));
+  const { back } = shared;
+  const surface = shared;
 
   let disposed = false;
-  return {
-    root,
-    dispose() {
-      if (disposed) return;
-      disposed = true;
-      geometries.forEach((geometry) => geometry.dispose());
-      materials.forEach((material) => material.dispose());
-      textures.forEach((texture) => texture.dispose());
-      root.clear();
-    },
+  const dispose = () => {
+    if (disposed) return;
+    disposed = true;
+    geometries.forEach((geometry) => geometry.dispose());
+    materials.forEach((material) => material.dispose());
+    cover.dispose();
+    releaseSharedTextures(shared);
+    root.clear();
   };
+
+  try {
+    const addRing = (inner: number, outer: number, z: number, material: THREE.Material, rear = false) => {
+      const geometry = annulus(inner, outer);
+      geometries.add(geometry);
+      materials.add(material);
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.z = z;
+      if (rear) mesh.rotation.y = Math.PI;
+      root.add(mesh);
+      return mesh;
+    };
+
+    const printed = new THREE.MeshPhysicalMaterial({
+      map: cover,
+      metalness: 0.25,
+      roughness: 0.43,
+      roughnessMap: surface.roughness,
+      normalMap: surface.normal,
+      normalScale: new THREE.Vector2(0.16, 0.16),
+      clearcoat: 0.65,
+      clearcoatRoughness: 0.26,
+      envMapIntensity: 0.48,
+      iridescence: 0.06,
+      iridescenceIOR: 1.35,
+      iridescenceThicknessRange: [140, 240],
+    });
+    addRing(HUB_RADIUS, FACE_RADIUS, HALF_THICKNESS, printed);
+
+    const recorded = new THREE.MeshPhysicalMaterial({
+      map: back,
+      metalness: 0.98,
+      roughness: 0.23,
+      roughnessMap: surface.roughness,
+      normalMap: surface.normal,
+      normalScale: new THREE.Vector2(0.13, 0.13),
+      clearcoat: 0.7,
+      clearcoatRoughness: 0.12,
+      iridescence: 0.48,
+      iridescenceIOR: 1.32,
+      iridescenceThicknessRange: [120, 390],
+      envMapIntensity: 0.95,
+    });
+    addRing(HUB_RADIUS, FACE_RADIUS, -HALF_THICKNESS, recorded, true);
+
+    const outerRimMaterial = new THREE.MeshPhysicalMaterial({
+      color: "#d6dadd",
+      metalness: 0.55,
+      roughness: 0.18,
+      clearcoat: 0.72,
+      clearcoatRoughness: 0.08,
+      envMapIntensity: 1.1,
+      side: THREE.DoubleSide,
+    });
+    materials.add(outerRimMaterial);
+
+    const rimMaterial = new THREE.MeshPhysicalMaterial({
+      color: "#b8c1c7",
+      metalness: 0.9,
+      roughness: 0.21,
+      clearcoat: 0.65,
+      clearcoatRoughness: 0.12,
+      envMapIntensity: 0.8,
+      side: THREE.DoubleSide,
+    });
+    materials.add(rimMaterial);
+    const rimProfile = [
+      new THREE.Vector2(FACE_RADIUS, -HALF_THICKNESS),
+      new THREE.Vector2(0.993, -HALF_THICKNESS),
+      new THREE.Vector2(RADIUS, -0.0028),
+      new THREE.Vector2(RADIUS, 0.0028),
+      new THREE.Vector2(0.993, HALF_THICKNESS),
+      new THREE.Vector2(FACE_RADIUS, HALF_THICKNESS),
+    ];
+    const rimGeometry = new THREE.LatheGeometry(rimProfile, 192);
+    rimGeometry.rotateX(Math.PI / 2);
+    geometries.add(rimGeometry);
+    root.add(new THREE.Mesh(rimGeometry, outerRimMaterial));
+
+    const reflectiveHub = new THREE.MeshPhysicalMaterial({
+      color: "#aeb7bd", metalness: 0.94, roughness: 0.2,
+      clearcoat: 0.8, clearcoatRoughness: 0.11, envMapIntensity: 0.9,
+    });
+    const frostedHub = new THREE.MeshPhysicalMaterial({
+      color: "#d3d9dc", metalness: 0.22, roughness: 0.46,
+      clearcoat: 0.65, clearcoatRoughness: 0.24, envMapIntensity: 0.7,
+    });
+    const plasticHub = new THREE.MeshPhysicalMaterial({
+      color: "#dbe2e4", metalness: 0, roughness: 0.22,
+      transmission: 0.55, thickness: 0.018, ior: 1.47,
+      transparent: true, opacity: 0.54, depthWrite: false,
+      clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 0.8,
+      side: THREE.DoubleSide,
+    });
+    const fineEdge = new THREE.MeshPhysicalMaterial({
+      color: "#d3dadd", metalness: 0.92, roughness: 0.16,
+      clearcoat: 1, envMapIntensity: 0.85,
+    });
+
+    for (const rear of [false, true]) {
+      const sign = rear ? -1 : 1;
+      addRing(0.188, HUB_RADIUS, sign * 0.0058, reflectiveHub, rear);
+      addRing(0.17, 0.188, sign * 0.0065, frostedHub, rear);
+      addRing(HOLE_RADIUS, 0.17, sign * 0.0065, plasticHub, rear);
+      addRing(0.237, 0.242, sign * 0.0073, fineEdge, rear);
+      addRing(0.186, 0.189, sign * 0.0073, fineEdge, rear);
+      addRing(HOLE_RADIUS, 0.144, sign * 0.0073, fineEdge, rear);
+    }
+
+    const holeGeometry = new THREE.LatheGeometry([
+      new THREE.Vector2(0.144, -0.007),
+      new THREE.Vector2(HOLE_RADIUS, -0.004),
+      new THREE.Vector2(HOLE_RADIUS, 0.004),
+      new THREE.Vector2(0.144, 0.007),
+    ], 128);
+    holeGeometry.rotateX(Math.PI / 2);
+    geometries.add(holeGeometry);
+    root.add(new THREE.Mesh(holeGeometry, rimMaterial));
+
+    return { root, dispose };
+  } catch (error) {
+    dispose();
+    throw error;
+  }
 }
 
 /** Broad studio reflections make lacquer and hub edges react to the disc's angle. */

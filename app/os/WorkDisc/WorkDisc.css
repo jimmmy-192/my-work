@@ -1,14 +1,13 @@
 .work-disc-view {
   height: 100%;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  padding: 14px 18px 18px;
+  position: relative;
   overflow: hidden;
   background: #fff;
 }
 
 .work-disc-canvas {
-  position: relative;
+  position: absolute;
+  inset: 0;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -31,15 +30,44 @@
 }
 
 .work-disc-controls {
+  position: absolute;
+  z-index: 1;
+  inset: auto 18px 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
   gap: 8px 16px;
-  padding-top: 10px;
   color: #747780;
   font-size: 12px;
   line-height: 1.5;
+}
+
+.work-disc-caption {
+  position: absolute;
+  inset: 24px auto auto 28px;
+  display: grid;
+  gap: 5px;
+  color: #3b3d43;
+  pointer-events: none;
+}
+
+.work-disc-caption span {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.work-disc-caption strong {
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .work-disc-caption { inset: 18px auto auto 20px; }
+  .work-disc-controls { gap: 8px 12px; inset-inline: 12px; bottom: 14px; }
+  #work-disc-help { flex-basis: 100%; text-align: center; }
 }
 
 .work-disc-controls button {
@@ -61,6 +89,24 @@
 .work-disc-controls button:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+.work-disc-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.work-disc-navigation button {
+  min-width: 34px;
+  padding-inline: 8px;
+}
+
+.work-disc-counter {
+  min-width: 48px;
+  text-align: center;
+  color: #555a63;
+  font-variant-numeric: tabular-nums;
 }
 
 .work-disc-fallback {

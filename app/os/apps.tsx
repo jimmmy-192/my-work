@@ -74,7 +74,7 @@ function WelcomeApp({ openApp }: Pick<AppContentProps, "openApp">) {
         fontWeight={600}
         fontSize={138}
         letterSpacing={0}
-        sweep={false}
+        sweep={true}
         reveal="letter"
         dashLength={4}
         dashGap={2}
